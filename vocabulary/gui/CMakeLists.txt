@@ -1,9 +1,9 @@
 add_library(gui STATIC
-    src/GUI.cpp
+    GUI.cpp
 )
 
 target_include_directories(gui PUBLIC
-    "${CMAKE_CURRENT_SOURCE_DIR}/include"
+    "${CMAKE_CURRENT_SOURCE_DIR}"
 )
 
 find_library(ncurses ncurses REQUIRED)
