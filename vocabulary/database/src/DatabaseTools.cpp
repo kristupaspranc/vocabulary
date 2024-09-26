@@ -15,9 +15,8 @@ void DatabaseTools::openDatabase(std::string dbName){
 int DatabaseTools::callbackWord(void *data, int argc, char **argv, char **colName){
     wordsTableRow *queryResults = static_cast<wordsTableRow*>(data);
 
-    for (std::size_t i = 0; i < argc; i++){
-        (*queryResults)[i] = argv[i];
-    }
+    (*queryResults)[0] = argv[0];
+    (*queryResults)[1] = argv[1];
 
     return 0;
 }
@@ -29,11 +28,13 @@ void DatabaseTools::addWord(std::string & word){
     checkError();
 }
 
-std::unique_ptr<wordsTableRow> DatabaseTools::lookUpWord(std::string phrase){
+std::unique_ptr<wordsTableRow> DatabaseTools::lookUpWord(std::string &word){
     std::unique_ptr<wordsTableRow> queryResults = std::make_unique<wordsTableRow>();
     wordsTableRow *ptr = queryResults.get();
 
-    std::string cmd = R"(SELECT * FROM words WHERE word = ')" + phrase + "';";
+    std::string cmd = R"(SELECT no_lookups, repeat_flag
+        FROM words
+        WHERE word = ')" + word + "';";
     sqlite3_exec(dbHandle, cmd.c_str(), callbackWord, ptr, &errMsg);
     checkError();
 

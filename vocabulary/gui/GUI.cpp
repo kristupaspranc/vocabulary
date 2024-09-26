@@ -114,15 +114,13 @@ void Interface::openVocabulary(){
                 wrefresh(displayWin);
                 writeCommand();
                 wclear(displayWin);
-                std::unique_ptr<std::array<std::string,3>>
+                std::unique_ptr<std::array<std::string,2>>
                     row = vocabulary.lookUpWord(command);
-                getch();
                 if (row){
-                    mvwprintw(displayWin, 3, 3, "%s %s %s %s",
+                    mvwprintw(displayWin, 3, 3, "%s %s %s",
+                            command.c_str(),
                             (*row)[0].c_str(),
-                            (*row)[1].c_str(),
-                            (*row)[2].c_str(),
-                            "you"
+                            (*row)[1].c_str()
                             );
                 }
                 else {

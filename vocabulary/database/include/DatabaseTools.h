@@ -5,7 +5,7 @@
 
 #include "DatabaseUtils.h"
 
-using wordsTableRow = std::array<std::string, 3>;
+using wordsTableRow = std::array<std::string, 2>;
 
 class DatabaseTools: private DatabaseUtils{
     bool checkDatabaseExistence(std::string dbName);
@@ -21,5 +21,5 @@ public:
 
     void addWord(std::string & word);
 
-    std::unique_ptr<wordsTableRow> lookUpWord(std::string phrase);
+    std::unique_ptr<wordsTableRow> lookUpWord(std::string &word);
 };
