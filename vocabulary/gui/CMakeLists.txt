@@ -9,6 +9,9 @@ target_include_directories(gui PUBLIC
 find_library(ncurses ncurses REQUIRED)
 
 target_link_libraries(gui PUBLIC
-    ncurses
     database
+)
+
+target_link_libraries(gui PRIVATE
+    ncurses
 )

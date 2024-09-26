@@ -1,13 +1,11 @@
 #pragma once
 
 #include<array>
-#include<filesystem>
-#include<vector>
+#include<memory>
 
 #include "DatabaseUtils.h"
 
 using wordsTableRow = std::array<std::string, 3>;
-using wordsTable = std::vector<wordsTableRow>;
 
 class DatabaseTools: private DatabaseUtils{
     bool checkDatabaseExistence(std::string dbName);
@@ -23,5 +21,5 @@ public:
 
     void addWord(std::string & word);
 
-    std::unique_ptr<wordsTable> lookUpWord(std::string phrase);
+    std::unique_ptr<wordsTableRow> lookUpWord(std::string phrase);
 };

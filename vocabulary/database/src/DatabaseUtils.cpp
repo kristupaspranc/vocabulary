@@ -1,3 +1,6 @@
+#include<filesystem>
+#include<iostream>
+
 #include "DatabaseUtils.h"
 
 
@@ -15,4 +18,9 @@ DatabaseUtils::~DatabaseUtils(){
     }
 
     sqlite3_close(dbHandle);
+}
+
+bool DatabaseUtils::checkDatabaseExistence(std::string dbName){
+    dbName = "Databases/" + dbName + ".db";
+    return std::filesystem::exists(dbName);
 }

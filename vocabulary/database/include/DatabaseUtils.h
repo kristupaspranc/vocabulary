@@ -1,8 +1,9 @@
 #pragma once
 
-#include <iostream>
+#include<string>
 
 #include <sqlite3.h>
+
 
 class DatabaseUtils{
 protected:
@@ -16,6 +17,7 @@ public:
     DatabaseUtils() = default;
     DatabaseUtils(const DatabaseUtils& db) = delete;
     DatabaseUtils& operator= (const DatabaseUtils& db) = delete;
-
     ~DatabaseUtils();
+
+    static bool checkDatabaseExistence(std::string dbName);
 };

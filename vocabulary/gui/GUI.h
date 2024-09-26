@@ -5,6 +5,7 @@
 
 #include "DatabaseCreation.h"
 #include "DatabaseTools.h"
+#include "DatabaseUtils.h"
 
 class Interface{
     WINDOW *CMDLine;
@@ -25,6 +26,10 @@ class Interface{
     void createVocabulary();
 
     void openVocabulary();
+
+    void defaultVocabularyDisplay();
+
+    void initialVocabulary();
 
 public:
     Interface();

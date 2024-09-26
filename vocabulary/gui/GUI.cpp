@@ -1,5 +1,6 @@
 #include "GUI.h"
 
+
 Interface::Interface(){
     startingScreen();
     getScreenSize();
@@ -93,33 +94,68 @@ void Interface::createVocabulary(){
 
 
 void Interface::openVocabulary(){
-    mvwprintw(displayWin, 3, 3, "%s", "Enter name of the vocabulary to enter");
-    wrefresh(displayWin);
-    writeCommand();
+    initialVocabulary();
     DatabaseTools vocabulary{command};
-    mvwprintw(displayWin, 3, 3, "%s", "a - Add word or phrase to the vocabulary");
-    mvwprintw(displayWin, 4, 3, "%s", "d - Add definition to chosen word");
-    mvwprintw(displayWin, 5, 3, "%s", "l - Look up a word");
-    wrefresh(displayWin);
-
+    defaultVocabularyDisplay();
     int ch;
 
     while ((ch = getch()) != KEY_F(1)){
         switch(ch) {
             case 97: // a
+                wclear(displayWin);
                 mvwprintw(displayWin, 3, 3, "%s", "Enter the word to add");
                 wrefresh(displayWin);
                 writeCommand();
                 vocabulary.addWord(command);
                 break;
             case 108: // l
+                wclear(displayWin);
                 mvwprintw(displayWin, 3, 3, "%s", "Enter the word to look up");
                 wrefresh(displayWin);
                 writeCommand();
-                std::unique_ptr<std::vector<std::array<std::string,3>>> row = vocabulary.lookUpWord(command);
-                mvwprintw(displayWin, 3, 3, "%s %s %s", (*row)[0][0].c_str(), (*row)[0][1].c_str(), (*row)[0][2].c_str());
+                wclear(displayWin);
+                std::unique_ptr<std::array<std::string,3>>
+                    row = vocabulary.lookUpWord(command);
+                getch();
+                if (row){
+                    mvwprintw(displayWin, 3, 3, "%s %s %s %s",
+                            (*row)[0].c_str(),
+                            (*row)[1].c_str(),
+                            (*row)[2].c_str(),
+                            "you"
+                            );
+                }
+                else {
+                    mvwprintw(displayWin, 3, 3, "%s",
+                            "There is no such word"
+                            );
+                }
                 wrefresh(displayWin);
+                getch();
+                break;
         }
+
+        defaultVocabularyDisplay();
     }
 }
 
+void Interface::defaultVocabularyDisplay(){
+    wclear(displayWin);
+    mvwprintw(displayWin, 3, 3, "%s", "a - Add word or phrase to the vocabulary");
+    mvwprintw(displayWin, 4, 3, "%s", "d - Add definition to chosen word");
+    mvwprintw(displayWin, 5, 3, "%s", "l - Look up a word");
+    wrefresh(displayWin);
+}
+
+void Interface::initialVocabulary(){
+    mvwprintw(displayWin, 3, 3, "%s", "Enter name of the vocabulary to enter");
+    wrefresh(displayWin);
+    writeCommand();
+    while(!DatabaseUtils::checkDatabaseExistence(command)){
+        wclear(displayWin);
+        mvwprintw(displayWin, 3, 3, "%s", "Vocabulary with given name does not exist");
+        mvwprintw(displayWin, 4, 3, "%s", "Enter name of the vocabulary to enter");
+        wrefresh(displayWin);
+        writeCommand();
+    }
+}
