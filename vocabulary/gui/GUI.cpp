@@ -1,4 +1,5 @@
 #include "GUI.h"
+#include <ncurses.h>
 
 
 Interface::Interface(){
@@ -102,35 +103,76 @@ void Interface::openVocabulary(){
     while ((ch = getch()) != KEY_F(1)){
         switch(ch) {
             case 97: // a
-                wclear(displayWin);
-                mvwprintw(displayWin, 3, 3, "%s", "Enter the word to add");
-                wrefresh(displayWin);
-                writeCommand();
-                vocabulary.addWord(command);
-                break;
+                {
+                    wclear(displayWin);
+                    mvwprintw(displayWin, 3, 3, "%s", "Enter the word to add");
+                    wrefresh(displayWin);
+                    writeCommand();
+                    vocabulary.addWord(command);
+                    break;
+                }
             case 108: // l
-                wclear(displayWin);
-                mvwprintw(displayWin, 3, 3, "%s", "Enter the word to look up");
-                wrefresh(displayWin);
-                writeCommand();
-                wclear(displayWin);
-                std::unique_ptr<std::array<std::string,2>>
-                    row = vocabulary.lookUpWord(command);
-                if (row){
-                    mvwprintw(displayWin, 3, 3, "%s %s %s",
-                            command.c_str(),
-                            (*row)[0].c_str(),
-                            (*row)[1].c_str()
-                            );
+                {
+                    wclear(displayWin);
+                    mvwprintw(displayWin, 3, 3, "%s", "Enter the word to look up");
+                    wrefresh(displayWin);
+                    writeCommand();
+                    wclear(displayWin);
+                    std::unique_ptr<std::array<std::string,2>>
+                        row = vocabulary.lookUpWord(command);
+                    if (row){
+                        mvwprintw(displayWin, 3, 3, "%s %s %s",
+                                command.c_str(),
+                                (*row)[0].c_str(),
+                                (*row)[1].c_str()
+                                );
+                    }
+                    else {
+                        mvwprintw(displayWin, 3, 3, "%s",
+                                "There is no such word"
+                                );
+                    }
+
+                    wrefresh(displayWin);
+                    getch();
+                    break;
                 }
-                else {
-                    mvwprintw(displayWin, 3, 3, "%s",
-                            "There is no such word"
-                            );
+            case 100: //d
+                {
+                    wclear(displayWin);
+                    mvwprintw(displayWin, 3, 3, "%s", "Enter the word to see definitions");
+                    wrefresh(displayWin);
+                    writeCommand();
+                    wclear(displayWin);
+                    std::unique_ptr<std::vector<std::string>>
+                        definitions = vocabulary.lookUpDefinitions(command);
+                    if (definitions){
+                        for (std::size_t i = 3; i < definitions->size() + 3; i++)
+                            mvwprintw(displayWin, i, 3, "%s",
+                                    (*definitions)[i-3].c_str());
+                    }
+                    else
+                        mvwprintw(displayWin, 3, 3, "%s",
+                                "There is no such word"
+                                );
+                    wrefresh(displayWin);
+                    getch();
+                    break;
                 }
-                wrefresh(displayWin);
-                getch();
-                break;
+            case 102: // f
+                {
+                    wclear(displayWin);
+                    mvwprintw(displayWin, 3, 3, "%s", "Choose phrase to add definition to");
+                    wrefresh(displayWin);
+                    writeCommand();
+                    wclear(displayWin);
+                    std::string phrase = command;
+                    wclear(displayWin);
+                    mvwprintw(displayWin, 3, 3, "%s", "Type in the definition");
+                    wrefresh(displayWin);
+                    writeCommand();
+                    vocabulary.addDefinition(phrase, command);
+                }
         }
 
         defaultVocabularyDisplay();
@@ -140,8 +182,9 @@ void Interface::openVocabulary(){
 void Interface::defaultVocabularyDisplay(){
     wclear(displayWin);
     mvwprintw(displayWin, 3, 3, "%s", "a - Add word or phrase to the vocabulary");
-    mvwprintw(displayWin, 4, 3, "%s", "d - Add definition to chosen word");
+    mvwprintw(displayWin, 4, 3, "%s", "d - Look at definitions of word");
     mvwprintw(displayWin, 5, 3, "%s", "l - Look up a word");
+    mvwprintw(displayWin, 6, 3, "%s", "f - Add definition to chosen word");
     wrefresh(displayWin);
 }
 

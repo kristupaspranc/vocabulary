@@ -8,6 +8,7 @@ DatabaseCreation::DatabaseCreation(std::string & dbName){
     createDatabase(dbName);
     createWordTable();
     createSentencesTable();
+    createDefinitionsTable();
 }
 
 void DatabaseCreation::checkDatabaseDirectory(){
@@ -49,7 +50,7 @@ void DatabaseCreation::createSentencesTable(){
 }
 
 void DatabaseCreation::createDefinitionsTable(){
-    std::string cmd = R"(CREATE TABLE IF NOT EXISTS sentences(
+    std::string cmd = R"(CREATE TABLE IF NOT EXISTS definitions(
             word TEXT NOT NULL,
             definition TEXT NOT NULL,
             PRIMARY KEY (word, definition),
