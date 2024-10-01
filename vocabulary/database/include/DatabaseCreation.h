@@ -1,9 +1,11 @@
+#pragma once
+
 #include "DatabaseUtils.h"
 
-#include<iostream>
-#include <filesystem>
 
 class DatabaseCreation: private DatabaseUtils{
+    void execStatement(std::string &cmd);
+
 public:
     DatabaseCreation(std::string & dbName);
     DatabaseCreation(const DatabaseCreation& db) = delete;

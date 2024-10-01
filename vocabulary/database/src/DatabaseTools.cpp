@@ -1,5 +1,4 @@
 #include "DatabaseTools.h"
-#include "DatabaseUtils.h"
 
 
 DatabaseTools::DatabaseTools(std::string & dbName){
@@ -31,10 +30,23 @@ int DatabaseTools::callbackDefinitions(void *data, int argc, char **argv, char *
     return 0;
 }
 
-void DatabaseTools::addWord(std::string & word){
-    std::string cmd = R"(INSERT INTO words (word) VALUES (?))";
-    dbCode = sqlite3_exec(dbHandle, cmd.c_str(), NULL, NULL, &errMsg);
+template<typename... Strings>
+void DatabaseTools::execInsertStatement(
+        std::string &cmd, allStringsInVariadic auto const&... insertives){
+    sqlite3_stmt *stmt;
+    sqlite3_prepare_v2(dbHandle, cmd.c_str(), -1, &stmt, NULL);
+    int i = 1;
+    dbCode = (sqlite3_bind_text(
+            stmt, i++, insertives.c_str(), -1, SQLITE_STATIC), ...);
     checkError();
+    dbCode = sqlite3_step(stmt);
+    sqlite3_finalize(stmt);
+    checkError();
+}
+
+void DatabaseTools::addWord(std::string & word){
+    std::string cmd = R"(INSERT INTO words (word) VALUES (?);)";
+    execInsertStatement(cmd, word);
 }
 
 std::unique_ptr<wordsTableRow> DatabaseTools::lookUpWord(std::string &word){
@@ -55,9 +67,8 @@ std::unique_ptr<wordsTableRow> DatabaseTools::lookUpWord(std::string &word){
 
 void DatabaseTools::addDefinition(std::string &word, std::string &definition){
     std::string cmd = R"(INSERT INTO definitions (word, definition)
-        VALUES (')" + word + "','" + definition + "');";
-    dbCode = sqlite3_exec(dbHandle, cmd.c_str(), NULL, NULL, &errMsg);
-    checkError();
+        VALUES (?,?);)";
+    execInsertStatement(cmd, word, definition);
 }
 
 std::unique_ptr<definitions> DatabaseTools::lookUpDefinitions(std::string & word){

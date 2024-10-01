@@ -10,3 +10,6 @@ target_include_directories(database PUBLIC
 
 find_package(SQLite3 REQUIRED)
 target_link_libraries(database PRIVATE sqlite3)
+target_link_libraries(database PUBLIC 
+    vocabulary_compiler_flags
+)

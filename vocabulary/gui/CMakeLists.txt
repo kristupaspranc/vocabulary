@@ -10,6 +10,7 @@ find_library(ncurses ncurses REQUIRED)
 
 target_link_libraries(gui PUBLIC
     database
+    vocabulary_compiler_flags
 )
 
 target_link_libraries(gui PRIVATE

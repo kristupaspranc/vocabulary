@@ -6,7 +6,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # set version of cpp
 add_library(vocabulary_compiler_flags INTERFACE)
-target_compile_features(vocabulary_compiler_flags INTERFACE cxx_std_17)
+target_compile_features(vocabulary_compiler_flags INTERFACE cxx_std_20)
 
 add_subdirectory(vocabulary)
 

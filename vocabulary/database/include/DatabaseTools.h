@@ -9,6 +9,9 @@
 using wordsTableRow = std::array<std::string, 2>;
 using definitions = std::vector<std::string>;
 
+template <typename... T>
+concept allStringsInVariadic = (std::is_same_v<T, std::string> && ...);
+
 class DatabaseTools: private DatabaseUtils{
     bool checkDatabaseExistence(std::string dbName);
 
@@ -17,6 +20,10 @@ class DatabaseTools: private DatabaseUtils{
     static int callbackWord(void *data, int argc, char **argv, char **colName);
 
     static int callbackDefinitions(void *data, int argc, char **argv, char **colName);
+
+    template<typename... strings>
+    void execInsertStatement(
+            std::string &cmd, allStringsInVariadic auto const&... insertives);
 
 public:
     DatabaseTools(std::string & dbName);

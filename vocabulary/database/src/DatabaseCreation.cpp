@@ -1,5 +1,8 @@
 #include "DatabaseCreation.h"
 
+#include<iostream>
+#include <filesystem>
+
 
 DatabaseCreation::DatabaseCreation(std::string & dbName){
     dbName = "Databases/" + dbName + ".db";
@@ -34,8 +37,7 @@ void DatabaseCreation::createWordTable(){
             no_lookups INTEGER DEFAULT 0,
             repeat_flag TINYINT DEFAULT 1))";
 
-    dbCode = sqlite3_exec(dbHandle, cmd.c_str(), NULL, NULL, &errMsg);
-    checkError();
+    execStatement(cmd);
 }
 
 void DatabaseCreation::createSentencesTable(){
@@ -45,8 +47,7 @@ void DatabaseCreation::createSentencesTable(){
             PRIMARY KEY (word, sentence),
             FOREIGN KEY (word) REFERENCES words(word)))";
 
-    dbCode = sqlite3_exec(dbHandle, cmd.c_str(), NULL, NULL, &errMsg);
-    checkError();
+    execStatement(cmd);
 }
 
 void DatabaseCreation::createDefinitionsTable(){
@@ -56,6 +57,13 @@ void DatabaseCreation::createDefinitionsTable(){
             PRIMARY KEY (word, definition),
             FOREIGN KEY (word) REFERENCES words(word)))";
 
-    dbCode = sqlite3_exec(dbHandle, cmd.c_str(), NULL, NULL, &errMsg);
+    execStatement(cmd);
+}
+
+void DatabaseCreation::execStatement(std::string &cmd){
+    sqlite3_stmt *stmt;
+    sqlite3_prepare_v2(dbHandle, cmd.c_str(), -1, &stmt, NULL);
+    dbCode = sqlite3_step(stmt);
+    sqlite3_finalize(stmt);
     checkError();
 }
