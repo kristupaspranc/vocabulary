@@ -11,7 +11,7 @@ class Interface{
     WINDOW *CMDLine;
     WINDOW *displayWin;
     std::pair<int, int> screenSize;
-    std::string command;
+    std::optional<std::string> command = "";
 
     void initializeCMDLine();
 
