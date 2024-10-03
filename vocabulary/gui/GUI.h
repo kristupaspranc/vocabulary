@@ -31,6 +31,12 @@ class Interface{
 
     void initialVocabulary();
 
+    void randomWord(DatabaseTools &vocabulary);
+
+    void randomWordInitialDisplay(std::string &word);
+
+    void initialDisplay();
+
 public:
     Interface();
     ~Interface();

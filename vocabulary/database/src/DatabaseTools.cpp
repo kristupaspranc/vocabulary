@@ -1,4 +1,7 @@
 #include "DatabaseTools.h"
+#include "DatabaseUtils.h"
+#include <optional>
+#include <utility>
 
 
 DatabaseTools::DatabaseTools(std::string & dbName){
@@ -12,33 +15,11 @@ void DatabaseTools::openDatabase(std::string dbName){
     checkError();
 }
 
-int DatabaseTools::callbackWord(void *data, int argc, char **argv, char **colName){
-    wordsTableRow *queryResults = static_cast<wordsTableRow*>(data);
-
-    (*queryResults)[0] = argv[0];
-    (*queryResults)[1] = argv[1];
-
-    return 0;
-}
-
-int DatabaseTools::callbackDefinitions(void *data, int argc, char **argv, char **colName){
-    definitions *queryResults = static_cast<definitions*>(data);
-
-    for (std::size_t i = 0; i < argc; i++)
-        queryResults->push_back(argv[i]);
-
-    return 0;
-}
-
 template<typename... Strings>
-void DatabaseTools::execInsertStatement(
+void DatabaseTools::execInsertUpdateStatement(
         std::string &cmd, allStringsInVariadic auto const&... insertives){
-    sqlite3_stmt *stmt;
-    sqlite3_prepare_v2(dbHandle, cmd.c_str(), -1, &stmt, NULL);
-    int i = 1;
-    dbCode = (sqlite3_bind_text(
-            stmt, i++, insertives.c_str(), -1, SQLITE_STATIC), ...);
-    checkError();
+    sqlite3_stmt *stmt = bindText(cmd, insertives...);
+
     dbCode = sqlite3_step(stmt);
     sqlite3_finalize(stmt);
     checkError();
@@ -46,45 +27,150 @@ void DatabaseTools::execInsertStatement(
 
 void DatabaseTools::addWord(std::string & word){
     std::string cmd = R"(INSERT INTO words (word) VALUES (?);)";
-    execInsertStatement(cmd, word);
+    execInsertUpdateStatement(cmd, word);
 }
 
-std::unique_ptr<wordsTableRow> DatabaseTools::lookUpWord(std::string &word){
-    std::unique_ptr<wordsTableRow> queryResults = std::make_unique<wordsTableRow>();
-    wordsTableRow *ptr = queryResults.get();
+std::optional<wordsTableRow> DatabaseTools::lookUpWord(std::string &word){
+    wordsTableRow queryResults;
 
     std::string cmd = R"(SELECT no_lookups, repeat_flag
         FROM words
-        WHERE word = ')" + word + "';";
-    sqlite3_exec(dbHandle, cmd.c_str(), callbackWord, ptr, &errMsg);
+        WHERE word = (?);)";
+
+    sqlite3_stmt *stmt = bindText(cmd, word);
+
+    if ((dbCode = sqlite3_step(stmt)) == SQLITE_ROW){
+        queryResults = std::make_pair<int, bool>(
+                sqlite3_column_int(stmt, 0),
+                sqlite3_column_int(stmt, 1)
+                );
+        sqlite3_finalize(stmt);
+        checkError();
+
+        return std::move(queryResults);
+    }
+
+    sqlite3_finalize(stmt);
     checkError();
 
-    if ((*queryResults)[0] == "")
-        return nullptr;
-
-    return std::move(queryResults);
+    return std::nullopt;
 }
 
 void DatabaseTools::addDefinition(std::string &word, std::string &definition){
     std::string cmd = R"(INSERT INTO definitions (word, definition)
         VALUES (?,?);)";
-    execInsertStatement(cmd, word, definition);
+    execInsertUpdateStatement(cmd, word, definition);
 }
 
-std::unique_ptr<definitions> DatabaseTools::lookUpDefinitions(std::string & word){
-    std::unique_ptr<definitions>
-        queryResults = std::make_unique<std::vector<std::string>>();
-    definitions *ptr = queryResults.get();
+void DatabaseTools::addSentence(std::string &word, std::string &sentence){
+    std::string cmd = R"(INSERT INTO sentences (word, sentence)
+        VALUES (?,?);)";
+    execInsertUpdateStatement(cmd, word, sentence);
+}
 
-    std::string cmd = R"(SELECT definition
-        FROM definitions
-        WHERE word = ')" + word + "';";
+std::optional<std::vector<std::string>> DatabaseTools::lookUp(
+        std::string &cmd, std::string & word){
+    std::vector<std::string> queryResults;
+    queryResults.reserve(3);
 
-    dbCode = sqlite3_exec(dbHandle, cmd.c_str(), callbackDefinitions, ptr, &errMsg);
+    sqlite3_stmt *stmt = bindText(cmd, word);
+
+    while ((dbCode = sqlite3_step(stmt)) == SQLITE_ROW){
+        queryResults.emplace_back(
+                reinterpret_cast<const char*>(sqlite3_column_text(stmt,0))
+                );
+    }
+
+    sqlite3_finalize(stmt);
     checkError();
 
-    if (queryResults->empty())
-        return nullptr;
+    if (queryResults.empty())
+        return std::nullopt;
 
-    return std::move(queryResults);
+    return queryResults;
 }
+
+std::optional<std::vector<std::string>> DatabaseTools::lookUpDefinitions(std::string & word){
+    std::string cmd = R"(SELECT definition
+        FROM definitions
+        WHERE word = (?);)";
+
+    return lookUp(cmd, word);
+}
+
+std::optional<std::vector<std::string>> DatabaseTools::lookUpSentences(std::string & word){
+    std::string cmd = R"(SELECT sentence 
+        FROM sentences
+        WHERE word = (?);)";
+
+    return lookUp(cmd, word);
+}
+
+template<typename... Strings>
+sqlite3_stmt* DatabaseTools::bindText(
+        std::string &cmd, allStringsInVariadic auto const&... insertives){
+    sqlite3_stmt *stmt;
+    sqlite3_prepare_v2(dbHandle, cmd.c_str(), -1, &stmt, NULL);
+    int i = 1;
+    dbCode = (sqlite3_bind_text(
+            stmt, i++, insertives.c_str(), -1, SQLITE_STATIC), ...);
+    checkError();
+
+    return stmt;
+}
+
+std::optional<std::string> DatabaseTools::getRandomFlaggedWord(){
+    std::string cmd = R"(SELECT word
+        FROM words
+        WHERE repeat_flag = 1
+        ORDER BY RANDOM()
+        LIMIT 1;)";
+
+    sqlite3_stmt *stmt;
+    sqlite3_prepare_v2(dbHandle, cmd.c_str(), -1, &stmt, NULL);
+
+    if ((dbCode = sqlite3_step(stmt)) == SQLITE_ROW){
+        std::string random_word = 
+                reinterpret_cast<const char*>(sqlite3_column_text(stmt,0));
+        sqlite3_finalize(stmt);
+        checkError();
+
+        return random_word;
+    }
+
+    sqlite3_finalize(stmt);
+    checkError();
+
+    return std::nullopt;
+}
+
+bool DatabaseTools::singleFlaggedWordExistance(){
+    std::string cmd = R"(SELECT word
+        FROM words
+        LIMIT 1;)";
+
+    sqlite3_stmt *stmt;
+    sqlite3_prepare_v2(dbHandle, cmd.c_str(), -1, &stmt, NULL);
+
+    if ((dbCode = sqlite3_step(stmt)) == SQLITE_ROW){
+        sqlite3_finalize(stmt);
+        checkError();
+
+        return true;
+    }
+
+    return false;
+}
+
+void DatabaseTools::unflagWord(std::string &word){
+    std::string cmd = R"(UPDATE words
+        SET repeat_flag = 0
+        WHERE word = (?)
+        )";
+
+    execInsertUpdateStatement(cmd, word);
+}
+
+
+
+

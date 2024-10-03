@@ -10,9 +10,9 @@ target_compile_features(vocabulary_compiler_flags INTERFACE cxx_std_20)
 
 add_subdirectory(vocabulary)
 
-add_executable(vocabulary.o main.cpp)
+add_executable(vcb main.cpp)
 
-target_link_libraries(vocabulary.o PUBLIC
+target_link_libraries(vcb PUBLIC
     gui
     vocabulary_compiler_flags
 )
