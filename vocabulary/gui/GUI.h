@@ -17,6 +17,8 @@ class Interface{
     int centerRow;
     std::optional<std::string> command = "";
 
+    static constexpr int ESC = 27;
+
     void initializeCMDLine();
 
     void initializeDisplay();

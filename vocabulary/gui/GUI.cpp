@@ -15,7 +15,7 @@ Interface::Interface(){
 
     int ch;
 
-    while ((ch =  getch()) != KEY_F(1)){
+    while ((ch =  getch()) != ESC){
         switch(ch) {
             case 99: // c
                 {
@@ -41,7 +41,8 @@ Interface::~Interface(){
 }
 
 void Interface::initializeCMDLine(){
-    CMDLine = newwin(0, 0, LINES - 2, 0); //setting first two to 0's defaults to filling the window till the end
+    //setting first two to 0's defaults to filling the window till the end
+    CMDLine = newwin(0, 0, LINES - 2, 0);
     wrefresh(CMDLine);
 }
 
@@ -65,6 +66,7 @@ void Interface::startingScreen(){
     cbreak();
     keypad(stdscr, TRUE);
     noecho();
+    set_escdelay(25);
 }
 
 void Interface::getScreenSize(){
@@ -74,8 +76,9 @@ void Interface::getScreenSize(){
 template <stringArray T, std::size_t N>
 void Interface::printInCenter(const std::array<T,N> &array){
     werase(displayWin);
+    int raiseBy = std::ceil((float)N / 2);
     for (int i = 0; i < N; i++){
-        mvwprintw(displayWin, centerRow + i, 1, "%s", array[i].c_str());
+        mvwprintw(displayWin, centerRow + i - raiseBy, 1, "%s", array[i].c_str());
     }
     wrefresh(displayWin);
 }
@@ -89,11 +92,12 @@ void Interface::printInCenter(const std::string &text){
 template <stringArray T, std::size_t N>
 void Interface::printInCenter(const std::array<T,N> &array, const std::vector<T> &vec){
     werase(displayWin);
+    int raiseBy = std::ceil((float)N / 2);
     for (int i = 0; i < N; i++){
-        mvwprintw(displayWin, centerRow + i, 1, "%s", array[i].c_str());
+        mvwprintw(displayWin, centerRow + i - raiseBy, 1, "%s", array[i].c_str());
     }
     for (int i = 0; i < vec.size(); i++){
-        mvwprintw(displayWin, centerRow + i + N, 1, "%s", vec[i].c_str());
+        mvwprintw(displayWin, centerRow + i + N - raiseBy, 1, "%s", vec[i].c_str());
     }
     wrefresh(displayWin);
 }
@@ -111,7 +115,7 @@ void Interface::writeCommand(){
                         mvwdelch(CMDLine, 1, command->length());
                     break;
                 }
-            case KEY_F(1):
+            case ESC:
                 {
                     command = std::nullopt;
                     werase(CMDLine);
@@ -152,7 +156,7 @@ void Interface::openVocabulary(){
     defaultVocabularyDisplay();
     int ch;
 
-    while ((ch = getch()) != KEY_F(1)){
+    while ((ch = getch()) != ESC){
         switch(ch) {
             case 97: // a
                 {
@@ -292,7 +296,7 @@ void Interface::randomWord(DatabaseTools &vocabulary){
 
     int ch;
 
-    while((ch = getch()) != KEY_F(1)){
+    while((ch = getch()) != ESC){
         switch (ch){
         case 97: // a
             {
@@ -363,6 +367,7 @@ void Interface::initialVocabulary(){
 
     writeCommand();
     if (!command) return;
+
     while(!DatabaseUtils::checkDatabaseExistence(*command)){
         std::array<std::string, 2> text = {{
             "Vocabulary with given name does not exist",
