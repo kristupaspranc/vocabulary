@@ -2,4 +2,5 @@
 
 int main(){
     Interface i;
+    i.run();
 }

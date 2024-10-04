@@ -12,7 +12,15 @@ Interface::Interface(){
     refresh();
     initializeDisplay();
     initializeCMDLine();
+}
 
+Interface::~Interface(){
+    delwin(displayWin);
+    delwin(CMDLine);
+    endwin();
+}
+
+void Interface::run(){
     int ch;
 
     while ((ch =  getch()) != ESC){
@@ -21,23 +29,19 @@ Interface::Interface(){
                 {
                     werase(displayWin);
                     createVocabulary();
-                    break;
                 }
+                break;
             case 111: // o
                 {
                     werase(displayWin);
                     openVocabulary();
-                    break;
                 }
+                break;
+            default:
+                break;
         }
         initialDisplay();
     }
-}
-
-Interface::~Interface(){
-    delwin(displayWin);
-    delwin(CMDLine);
-    endwin();
 }
 
 void Interface::initializeCMDLine(){
@@ -84,7 +88,7 @@ void Interface::printInCenter(const std::array<T,N> &array){
 }
 
 void Interface::printInCenter(const std::string &text){
-    werase(displayWin);
+    wclear(displayWin);
     mvwprintw(displayWin, centerRow, 1, "%s", text.c_str());
     wrefresh(displayWin);
 }
@@ -102,57 +106,65 @@ void Interface::printInCenter(const std::array<T,N> &array, const std::vector<T>
     wrefresh(displayWin);
 }
 
-void Interface::writeCommand(){
+Command Interface::writeCommand(){
     int ch;
-    *command = "";
+    std::string cmd = "";
 
     while ((ch=getch()) != 10){ // <Enter>
         switch(ch) {
             case 263: // backspace
                 {
-                    if (!command->empty())
-                        command->pop_back();
-                        mvwdelch(CMDLine, 1, command->length());
-                    break;
+                    if (!cmd.empty())
+                        cmd.pop_back();
+                        mvwdelch(CMDLine, 1, cmd.length());
                 }
+                break;
             case ESC:
                 {
-                    command = std::nullopt;
                     werase(CMDLine);
-                    return;
+                    wrefresh(CMDLine);
+                    return std::nullopt;
                 }
+                break;
             default:
                 {
                     char symbol = static_cast<char>(ch);
-                    command->push_back(symbol);
-                    mvwaddch(CMDLine, 1, command->length() - 1, symbol);
-                    break;
+                    cmd.push_back(symbol);
+                    mvwaddch(CMDLine, 1, cmd.length() - 1, symbol);
                 }
+                break;
         }
         wrefresh(CMDLine);
     }
 
     werase(CMDLine);
     wrefresh(CMDLine);
+
+    return cmd;
 }
 
 void Interface::createVocabulary(){
-    mvwprintw(displayWin, 3, 3, "%s", "Enter name of the new vocabulary");
-    wrefresh(displayWin);
-    writeCommand();
-    if (!command) return;
-    (void)DatabaseCreation{*command};
-    werase(displayWin);
-    mvwprintw(displayWin, 3, 3, "%s", "New vocabulary created");
-    wrefresh(displayWin);
+    printInCenter("Enter name of the new vocabulary");
+
+    Command vocName = writeCommand();
+    if (!vocName){
+        return;
+    }
+
+    (void)DatabaseCreation{*vocName};
+
+    printInCenter("New vocabulary created");
     getch();
 }
 
 
 void Interface::openVocabulary(){
-    initialVocabulary();
-    if (!command) return;
-    DatabaseTools vocabulary{*command};
+    Command vocName = initialVocabulary();
+    if (!vocName){
+        return;
+    }
+
+    DatabaseTools vocabulary{*vocName};
     defaultVocabularyDisplay();
     int ch;
 
@@ -161,22 +173,22 @@ void Interface::openVocabulary(){
             case 97: // a
                 {
                     printInCenter("Enter the word to add");
-                    writeCommand();
-                    if (!command) break;
-                    vocabulary.addWord(*command);
+                    Command word = writeCommand();
+                    if (!word) break;
+                    vocabulary.addWord(*word);
                     break;
                 }
             case 108: // l
                 {
                     printInCenter("Enter the word to look up");
-                    writeCommand();
-                    if (!command) break;
+                    Command word = writeCommand();
+                    if (!word) break;
                     werase(displayWin);
                     std::optional<std::pair<int, bool>>
-                        row = vocabulary.lookUpWord(*command);
+                        row = vocabulary.lookUpWord(*word);
                     if (row){
                         mvwprintw(displayWin, 3, 3, "%s %d %d",
-                                command->c_str(),
+                                word->c_str(),
                                 row->first,
                                 row->second
                                 );
@@ -191,12 +203,13 @@ void Interface::openVocabulary(){
             case 100: //d
                 {
                     printInCenter("Enter the word to see definitions");
-                    writeCommand();
-                    if (!command) break;
+                    Command word = writeCommand();
+                    if (!word) break;
+
                     werase(displayWin);
                     std::array<std::string, 1> text{{"Here are the definitions"}};
                     std::optional<std::vector<std::string>>
-                        definitions = vocabulary.lookUpDefinitions(*command);
+                        definitions = vocabulary.lookUpDefinitions(*word);
                     if (definitions){
                         for (std::size_t i = 0; i < definitions->size(); i++)
                             mvwprintw(displayWin, i+3, 3, "%s",
@@ -213,27 +226,26 @@ void Interface::openVocabulary(){
             case 102: // f
                 {
                     printInCenter("Choose phrase to add definition to");
-                    writeCommand();
-                    if (!command) break;
-                    std::string phrase = *command;
+                    Command word = writeCommand();
+                    if (!word) break;
 
                     printInCenter("Type in the definition");
-                    writeCommand();
-                    if (!command) break;
+                    Command definition = writeCommand();
+                    if (!definition) break;
 
-                    vocabulary.addDefinition(phrase, *command);
+                    vocabulary.addDefinition(*word, *definition);
                     break;
                 }
             case 115: //s
                 {
                     printInCenter("Enter the word to see sentences");
-                    writeCommand();
-                    if (!command) break;
+                    Command word = writeCommand();
+                    if (!word) break;
 
                     std::array<std::string, 1> text{{"Here are the sentences"}};
 
                     std::optional<std::vector<std::string>>
-                        definitions = vocabulary.lookUpSentences(*command);
+                        definitions = vocabulary.lookUpSentences(*word);
                     if (definitions){
                         for (std::size_t i = 0; i < definitions->size(); i++)
                             mvwprintw(displayWin, i+3, 3, "%s",
@@ -250,15 +262,14 @@ void Interface::openVocabulary(){
             case 106: // j
                 {
                     printInCenter("Choose phrase to add sentence to");
-                    writeCommand();
-                    if (!command) break;
-                    std::string phrase = *command;
+                    Command word = writeCommand();
+                    if (!word) break;
 
                     printInCenter("Type in the sentence");
-                    writeCommand();
-                    if (!command) break;
+                    Command sentence = writeCommand();
+                    if (!sentence) break;
 
-                    vocabulary.addSentence(phrase, *command);
+                    vocabulary.addSentence(*word, *sentence);
                     break;
                 }
             case 114: //r
@@ -266,6 +277,8 @@ void Interface::openVocabulary(){
                     randomWord(vocabulary);
                     break;
                 }
+            default:
+                break;
         }
         defaultVocabularyDisplay();
     }
@@ -301,19 +314,19 @@ void Interface::randomWord(DatabaseTools &vocabulary){
         case 97: // a
             {
                 printInCenter("Add a sentence with context for word " + *random_word);
-                writeCommand();
-                if (!command) break;
+                Command sentence = writeCommand();
+                if (!sentence) break;
 
-                vocabulary.addSentence(*random_word, *command);
+                vocabulary.addSentence(*random_word, *sentence);
                 break;
             }
         case 32: // <SPACE>
             {
                 printInCenter("Add a sentence with context for word " + *random_word);
-                writeCommand();
-                if (!command) break;
+                Command sentence = writeCommand();
+                if (!sentence) break;
 
-                vocabulary.addSentence(*random_word, *command);
+                vocabulary.addSentence(*random_word, *sentence);
                 random_word = vocabulary.getRandomFlaggedWord();
                 break;
             }
@@ -328,6 +341,7 @@ void Interface::randomWord(DatabaseTools &vocabulary){
 
                 printInCenter(text, *definitions);
                 getch();
+                break;
             }
         case 109: //m
             {
@@ -335,6 +349,7 @@ void Interface::randomWord(DatabaseTools &vocabulary){
                 printInCenter("The word '" + *random_word + "' was unflagged");
                 getch();
                 random_word = vocabulary.getRandomFlaggedWord();
+                break;
             }
         }
 
@@ -362,13 +377,13 @@ void Interface::defaultVocabularyDisplay(){
     printInCenter(text);
 }
 
-void Interface::initialVocabulary(){
+Command Interface::initialVocabulary(){
     printInCenter("Enter name of the vocabulary to enter");
 
-    writeCommand();
-    if (!command) return;
+    Command vocName = writeCommand();
+    if (!vocName) return std::nullopt;
 
-    while(!DatabaseUtils::checkDatabaseExistence(*command)){
+    while(!DatabaseUtils::checkDatabaseExistence(*vocName)){
         std::array<std::string, 2> text = {{
             "Vocabulary with given name does not exist",
             "Enter name of the vocabulary to enter"
@@ -376,7 +391,9 @@ void Interface::initialVocabulary(){
 
         printInCenter(text);
 
-        writeCommand();
-        if (!command) return;
+        vocName= writeCommand();
+        if (!vocName) return std::nullopt;
     }
+
+    return vocName;
 }

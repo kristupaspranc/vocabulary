@@ -7,6 +7,8 @@
 #include "DatabaseTools.h"
 #include "DatabaseUtils.h"
 
+using Command = std::optional<std::string>;
+
 template <typename T>
 concept stringArray = std::same_as<T, std::string>;
 
@@ -15,7 +17,6 @@ class Interface{
     WINDOW *displayWin;
     std::pair<int, int> screenSize;
     int centerRow;
-    std::optional<std::string> command = "";
 
     static constexpr int ESC = 27;
 
@@ -27,7 +28,7 @@ class Interface{
 
     void getScreenSize();
 
-    void writeCommand();
+    Command writeCommand();
 
     void createVocabulary();
 
@@ -35,7 +36,7 @@ class Interface{
 
     void defaultVocabularyDisplay();
 
-    void initialVocabulary();
+    Command initialVocabulary();
 
     void randomWord(DatabaseTools &vocabulary);
 
@@ -54,5 +55,7 @@ class Interface{
 public:
     Interface();
     ~Interface();
+
+    void run();
 };
 
