@@ -27,13 +27,11 @@ void Interface::run(){
         switch(ch) {
             case 99: // c
                 {
-                    werase(displayWin);
                     createVocabulary();
                 }
                 break;
             case 111: // o
                 {
-                    werase(displayWin);
                     openVocabulary();
                 }
                 break;
@@ -157,6 +155,101 @@ void Interface::createVocabulary(){
     getch();
 }
 
+void Interface::addWord(DatabaseTools &voc){
+    printInCenter("Enter the word to add");
+    Command word = writeCommand();
+    if (!word) return;
+
+    voc.addWord(*word);
+}
+
+void Interface::lookUpWord(DatabaseTools &voc){
+        printInCenter("Enter the word to look up");
+        Command word = writeCommand();
+        if (!word) return;
+        werase(displayWin);
+        std::optional<std::pair<int, bool>>
+            row = voc.lookUpWord(*word);
+        if (row){
+            mvwprintw(displayWin, 3, 3, "%s %d %d",
+                    word->c_str(),
+                    row->first,
+                    row->second
+                    );
+            wrefresh(displayWin);
+        }
+        else 
+            printInCenter("There is no such word");
+
+        getch();
+}
+
+void Interface::displayDefinitions(DatabaseTools &voc){
+    printInCenter("Enter the word to see definitions");
+    Command word = writeCommand();
+    if (!word) return;
+
+    werase(displayWin);
+    std::array<std::string, 1> text{{"Here are the definitions"}};
+    std::optional<std::vector<std::string>>
+        definitions = voc.lookUpDefinitions(*word);
+    if (definitions){
+        for (std::size_t i = 0; i < definitions->size(); i++)
+            mvwprintw(displayWin, i+3, 3, "%s",
+                    (*definitions)[i].c_str());
+        printInCenter(text, *definitions);
+    }
+    else 
+        printInCenter("There is no such word");
+
+    wrefresh(displayWin);
+    getch();
+}
+
+void Interface::addDefinition(DatabaseTools &voc){
+    printInCenter("Choose phrase to add definition to");
+    Command word = writeCommand();
+    if (!word) return;
+
+    printInCenter("Type in the definition");
+    Command definition = writeCommand();
+    if (!definition) return;
+
+    voc.addDefinition(*word, *definition);
+}
+
+void Interface::displaySentences(DatabaseTools &voc){
+    printInCenter("Enter the word to see sentences");
+    Command word = writeCommand();
+    if (!word) return;
+
+    std::array<std::string, 1> text{{"Here are the sentences"}};
+
+    std::optional<std::vector<std::string>>
+        definitions = voc.lookUpSentences(*word);
+    if (definitions){
+        for (std::size_t i = 0; i < definitions->size(); i++)
+            mvwprintw(displayWin, i+3, 3, "%s",
+                    (*definitions)[i].c_str());
+        printInCenter(text, *definitions);
+    }
+    else
+        printInCenter("There is no such word");
+
+    getch();
+}
+
+void Interface::addSentence(DatabaseTools &voc){
+    printInCenter("Choose phrase to add sentence to");
+    Command word = writeCommand();
+    if (!word) return;
+
+    printInCenter("Type in the sentence");
+    Command sentence = writeCommand();
+    if (!sentence) return;
+
+    voc.addSentence(*word, *sentence);
+}
 
 void Interface::openVocabulary(){
     Command vocName = initialVocabulary();
@@ -171,112 +264,26 @@ void Interface::openVocabulary(){
     while ((ch = getch()) != ESC){
         switch(ch) {
             case 97: // a
-                {
-                    printInCenter("Enter the word to add");
-                    Command word = writeCommand();
-                    if (!word) break;
-                    vocabulary.addWord(*word);
-                    break;
-                }
+                addWord(vocabulary);
+                break;
             case 108: // l
-                {
-                    printInCenter("Enter the word to look up");
-                    Command word = writeCommand();
-                    if (!word) break;
-                    werase(displayWin);
-                    std::optional<std::pair<int, bool>>
-                        row = vocabulary.lookUpWord(*word);
-                    if (row){
-                        mvwprintw(displayWin, 3, 3, "%s %d %d",
-                                word->c_str(),
-                                row->first,
-                                row->second
-                                );
-                        wrefresh(displayWin);
-                    }
-                    else 
-                        printInCenter("There is no such word");
-
-                    getch();
-                    break;
-                }
+                lookUpWord(vocabulary);
+                break;
             case 100: //d
-                {
-                    printInCenter("Enter the word to see definitions");
-                    Command word = writeCommand();
-                    if (!word) break;
-
-                    werase(displayWin);
-                    std::array<std::string, 1> text{{"Here are the definitions"}};
-                    std::optional<std::vector<std::string>>
-                        definitions = vocabulary.lookUpDefinitions(*word);
-                    if (definitions){
-                        for (std::size_t i = 0; i < definitions->size(); i++)
-                            mvwprintw(displayWin, i+3, 3, "%s",
-                                    (*definitions)[i].c_str());
-                        printInCenter(text, *definitions);
-                    }
-                    else 
-                        printInCenter("There is no such word");
-
-                    wrefresh(displayWin);
-                    getch();
-                    break;
-                }
+                displayDefinitions(vocabulary);
+                break;
             case 102: // f
-                {
-                    printInCenter("Choose phrase to add definition to");
-                    Command word = writeCommand();
-                    if (!word) break;
-
-                    printInCenter("Type in the definition");
-                    Command definition = writeCommand();
-                    if (!definition) break;
-
-                    vocabulary.addDefinition(*word, *definition);
-                    break;
-                }
+                addDefinition(vocabulary);
+                break;
             case 115: //s
-                {
-                    printInCenter("Enter the word to see sentences");
-                    Command word = writeCommand();
-                    if (!word) break;
-
-                    std::array<std::string, 1> text{{"Here are the sentences"}};
-
-                    std::optional<std::vector<std::string>>
-                        definitions = vocabulary.lookUpSentences(*word);
-                    if (definitions){
-                        for (std::size_t i = 0; i < definitions->size(); i++)
-                            mvwprintw(displayWin, i+3, 3, "%s",
-                                    (*definitions)[i].c_str());
-                        printInCenter(text, *definitions);
-                    }
-                    else
-                        printInCenter("There is no such word");
-
-                    getch();
-                    break;
-
-                }
+                displaySentences(vocabulary);
+                break;
             case 106: // j
-                {
-                    printInCenter("Choose phrase to add sentence to");
-                    Command word = writeCommand();
-                    if (!word) break;
-
-                    printInCenter("Type in the sentence");
-                    Command sentence = writeCommand();
-                    if (!sentence) break;
-
-                    vocabulary.addSentence(*word, *sentence);
-                    break;
-                }
+                addSentence(vocabulary);
+                break;
             case 114: //r
-                {
-                    randomWord(vocabulary);
-                    break;
-                }
+                randomWord(vocabulary);
+                break;
             default:
                 break;
         }

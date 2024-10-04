@@ -52,6 +52,18 @@ class Interface{
     template <stringArray T, std::size_t N>
     void printInCenter(const std::array<T,N> &array, const std::vector<T> &vec);
 
+    void addWord(DatabaseTools &voc);
+
+    void lookUpWord(DatabaseTools &voc);
+
+    void displayDefinitions(DatabaseTools &voc);
+
+    void addDefinition(DatabaseTools &voc);
+
+    void displaySentences(DatabaseTools &voc);
+
+    void addSentence(DatabaseTools &voc);
+
 public:
     Interface();
     ~Interface();
