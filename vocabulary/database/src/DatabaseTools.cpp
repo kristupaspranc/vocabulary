@@ -10,9 +10,9 @@ DatabaseTools::DatabaseTools(std::string & dbName){
 
 void DatabaseTools::openDatabase(std::string dbName){
     dbName = "Databases/" + dbName + ".db";
-    dbCode = sqlite3_open_v2(dbName.c_str(), &dbHandle,
+    m_dbCode = sqlite3_open_v2(dbName.c_str(), &m_dbHandle,
             SQLITE_OPEN_READWRITE, 0);
-    checkError();
+    checkSQLError();
 }
 
 template<typename... Strings>
@@ -20,16 +20,16 @@ void DatabaseTools::execInsertUpdateStatement(
         std::string &cmd, allStringsInVariadic auto const&... insertives){
     sqlite3_stmt *stmt = bindText(cmd, insertives...);
 
-    dbCode = sqlite3_step(stmt);
+    m_dbCode = sqlite3_step(stmt);
     sqlite3_finalize(stmt);
-    checkError();
+    checkSQLError();
 }
 
 bool DatabaseTools::addWord(std::string & word){
     std::string cmd = R"(INSERT INTO words (word) VALUES (?);)";
     execInsertUpdateStatement(cmd, word);
 
-    if (dbCode == SQLITE_CONSTRAINT)
+    if (m_dbCode == SQLITE_CONSTRAINT)
         return false;
 
     return true;
@@ -44,19 +44,19 @@ std::optional<wordsTableRow> DatabaseTools::lookUpWord(std::string &word){
 
     sqlite3_stmt *stmt = bindText(cmd, word);
 
-    if ((dbCode = sqlite3_step(stmt)) == SQLITE_ROW){
+    if ((m_dbCode = sqlite3_step(stmt)) == SQLITE_ROW){
         queryResults = std::make_pair<int, bool>(
                 sqlite3_column_int(stmt, 0),
                 sqlite3_column_int(stmt, 1)
                 );
         sqlite3_finalize(stmt);
-        checkError();
+        checkSQLError();
 
         return std::move(queryResults);
     }
 
     sqlite3_finalize(stmt);
-    checkError();
+    checkSQLError();
 
     return std::nullopt;
 }
@@ -80,14 +80,14 @@ std::optional<std::vector<std::string>> DatabaseTools::lookUp(
 
     sqlite3_stmt *stmt = bindText(cmd, word);
 
-    while ((dbCode = sqlite3_step(stmt)) == SQLITE_ROW){
+    while ((m_dbCode = sqlite3_step(stmt)) == SQLITE_ROW){
         queryResults.emplace_back(
                 reinterpret_cast<const char*>(sqlite3_column_text(stmt,0))
                 );
     }
 
     sqlite3_finalize(stmt);
-    checkError();
+    checkSQLError();
 
     if (queryResults.empty())
         return std::nullopt;
@@ -115,11 +115,11 @@ template<typename... Strings>
 sqlite3_stmt* DatabaseTools::bindText(
         std::string &cmd, allStringsInVariadic auto const&... insertives){
     sqlite3_stmt *stmt;
-    sqlite3_prepare_v2(dbHandle, cmd.c_str(), -1, &stmt, NULL);
+    sqlite3_prepare_v2(m_dbHandle, cmd.c_str(), -1, &stmt, NULL);
     int i = 1;
-    dbCode = (sqlite3_bind_text(
+    m_dbCode = (sqlite3_bind_text(
             stmt, i++, insertives.c_str(), -1, SQLITE_STATIC), ...);
-    checkError();
+    checkSQLError();
 
     return stmt;
 }
@@ -132,19 +132,19 @@ std::optional<std::string> DatabaseTools::getRandomFlaggedWord(){
         LIMIT 1;)";
 
     sqlite3_stmt *stmt;
-    sqlite3_prepare_v2(dbHandle, cmd.c_str(), -1, &stmt, NULL);
+    sqlite3_prepare_v2(m_dbHandle, cmd.c_str(), -1, &stmt, NULL);
 
-    if ((dbCode = sqlite3_step(stmt)) == SQLITE_ROW){
+    if ((m_dbCode = sqlite3_step(stmt)) == SQLITE_ROW){
         std::string random_word = 
                 reinterpret_cast<const char*>(sqlite3_column_text(stmt,0));
         sqlite3_finalize(stmt);
-        checkError();
+        checkSQLError();
 
         return random_word;
     }
 
     sqlite3_finalize(stmt);
-    checkError();
+    checkSQLError();
 
     return std::nullopt;
 }
@@ -155,11 +155,11 @@ bool DatabaseTools::singleFlaggedWordExistance(){
         LIMIT 1;)";
 
     sqlite3_stmt *stmt;
-    sqlite3_prepare_v2(dbHandle, cmd.c_str(), -1, &stmt, NULL);
+    sqlite3_prepare_v2(m_dbHandle, cmd.c_str(), -1, &stmt, NULL);
 
-    if ((dbCode = sqlite3_step(stmt)) == SQLITE_ROW){
+    if ((m_dbCode = sqlite3_step(stmt)) == SQLITE_ROW){
         sqlite3_finalize(stmt);
-        checkError();
+        checkSQLError();
 
         return true;
     }

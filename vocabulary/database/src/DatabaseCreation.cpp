@@ -1,6 +1,5 @@
 #include "DatabaseCreation.h"
 
-#include<iostream>
 #include <filesystem>
 
 
@@ -20,15 +19,15 @@ void DatabaseCreation::checkDatabaseDirectory(){
     }
     // TODO implement catching
     catch (const std::filesystem::filesystem_error& e) {
-        std::cerr << "Filesystem error: " << e.what() << std::endl;
+        m_log << "Filesystem error: " << e.what() << "\n";
     }
 }
 
 void DatabaseCreation::createDatabase(std::string dbName){
-    dbCode = sqlite3_open_v2(dbName.c_str(), &dbHandle,
+    m_dbCode = sqlite3_open_v2(dbName.c_str(), &m_dbHandle,
             SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, 0);
 
-    checkError();
+    checkSQLError();
 }
 
 void DatabaseCreation::createWordTable(){
@@ -62,8 +61,8 @@ void DatabaseCreation::createDefinitionsTable(){
 
 void DatabaseCreation::execStatement(std::string &cmd){
     sqlite3_stmt *stmt;
-    sqlite3_prepare_v2(dbHandle, cmd.c_str(), -1, &stmt, NULL);
-    dbCode = sqlite3_step(stmt);
+    sqlite3_prepare_v2(m_dbHandle, cmd.c_str(), -1, &stmt, NULL);
+    m_dbCode = sqlite3_step(stmt);
     sqlite3_finalize(stmt);
-    checkError();
+    checkSQLError();
 }

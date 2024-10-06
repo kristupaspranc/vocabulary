@@ -1,26 +1,29 @@
 #include<filesystem>
-#include<iostream>
 
 #include "DatabaseUtils.h"
 
+DatabaseUtils::DatabaseUtils(){
+    m_log.open("log.txt");
+}
 
-void DatabaseUtils::checkError(){
-    if (dbCode != SQLITE_OK && dbCode != SQLITE_CONSTRAINT){
-        std::cerr << "SQL error: " << errMsg << std::endl;
-        sqlite3_free(errMsg);
+void DatabaseUtils::checkSQLError(){
+    if (m_dbCode != SQLITE_OK && m_dbCode != SQLITE_CONSTRAINT){
+        m_log << "SQL error: " <<  m_errMsg << "\n";
+        sqlite3_free(m_errMsg);
     }
 }
 
 DatabaseUtils::~DatabaseUtils(){
-    if (dbCode != SQLITE_OK && dbCode != SQLITE_CONSTRAINT){
-        std::cout << "DB Error: " << sqlite3_errmsg(dbHandle) << "\n";
-        sqlite3_close(dbHandle);
+    if (m_dbCode != SQLITE_OK && m_dbCode != SQLITE_CONSTRAINT){
+        m_log << "DB Error: " << sqlite3_errmsg(m_dbHandle) << "\n";
+        sqlite3_close(m_dbHandle);
     }
 
-    sqlite3_close(dbHandle);
+    sqlite3_close(m_dbHandle);
+    m_log.close();
 }
 
-bool DatabaseUtils::checkDatabaseExistence(std::string dbName){
+bool DatabaseUtils::s_checkDatabaseExistence(std::string dbName){
     dbName = "Databases/" + dbName + ".db";
     return std::filesystem::exists(dbName);
 }

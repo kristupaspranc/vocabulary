@@ -1,23 +1,27 @@
 #pragma once
 
-#include<string>
+#include <fstream>
+#include <string>
 
 #include <sqlite3.h>
 
 
 class DatabaseUtils{
 protected:
-    int dbCode;
-    sqlite3 * dbHandle;
-    char * errMsg = 0;
+    int m_dbCode;
+    sqlite3 * m_dbHandle;
+    char * m_errMsg = 0;
 
-    void checkError();
+    std::ofstream m_log;
+
+protected:
+    void checkSQLError();
 
 public:
-    DatabaseUtils() = default;
+    DatabaseUtils();
     DatabaseUtils(const DatabaseUtils& db) = delete;
     DatabaseUtils& operator= (const DatabaseUtils& db) = delete;
     ~DatabaseUtils();
 
-    static bool checkDatabaseExistence(std::string dbName);
+    static bool s_checkDatabaseExistence(std::string dbName);
 };

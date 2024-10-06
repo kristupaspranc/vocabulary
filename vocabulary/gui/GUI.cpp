@@ -406,7 +406,7 @@ Command Interface::initialVocabulary(){
     Command vocName = writeCommand();
     if (!vocName) return std::nullopt;
 
-    while(!DatabaseUtils::checkDatabaseExistence(*vocName)){
+    while(!DatabaseUtils::s_checkDatabaseExistence(*vocName)){
         std::array<std::string, 2> text = {{
             "Vocabulary with given name does not exist",
             "Enter name of the vocabulary to enter"
