@@ -27,7 +27,10 @@ void Interface::run(){
         switch(ch) {
             case ASCIICodes::c:
                 {
-                    createVocabulary();
+                    Command vocName = createVocabulary();
+                    if (vocName)
+                        openVocabulary(*vocName);
+                    break;
                 }
                 break;
             case ASCIICodes::o:
@@ -141,18 +144,20 @@ Command Interface::writeCommand(){
     return cmd;
 }
 
-void Interface::createVocabulary(){
+std::optional<std::string> Interface::createVocabulary(){
     printInCenter("Enter name of the new vocabulary");
 
     Command vocName = writeCommand();
     if (!vocName){
-        return;
+        return std::nullopt;
     }
 
     (void)DatabaseCreation{*vocName};
 
     printInCenter("New vocabulary created");
     getch();
+
+    return std::move(*vocName);
 }
 
 void Interface::addWord(DatabaseTools &voc){
@@ -254,13 +259,21 @@ void Interface::addSentence(DatabaseTools &voc){
     voc.addSentence(*word, *sentence);
 }
 
+void Interface::openVocabulary(std::string &vocName){
+    runVocabulary(vocName);
+}
+
 void Interface::openVocabulary(){
     Command vocName = initialVocabulary();
     if (!vocName){
         return;
     }
 
-    DatabaseTools vocabulary{*vocName};
+    runVocabulary(*vocName);
+}
+
+void Interface::runVocabulary(std::string &vocName){
+    DatabaseTools vocabulary{vocName};
     defaultVocabularyDisplay();
     int ch;
 

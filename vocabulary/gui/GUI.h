@@ -47,9 +47,13 @@ private:
 
     Command writeCommand();
 
-    void createVocabulary();
+    std::optional<std::string> createVocabulary();
 
     void openVocabulary();
+
+    void openVocabulary(std::string &vocName);
+
+    inline void runVocabulary(std::string &vocName);
 
     void defaultVocabularyDisplay();
 
