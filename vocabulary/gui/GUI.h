@@ -13,13 +13,30 @@ template <typename T>
 concept stringArray = std::same_as<T, std::string>;
 
 class Interface{
-    WINDOW *CMDLine;
-    WINDOW *displayWin;
-    std::pair<int, int> screenSize;
-    int centerRow;
+    WINDOW *m_CMDLine;
+    WINDOW *m_displayWin;
+    std::pair<int, int> m_screenSize;
+    int m_centerRow;
 
-    static constexpr int ESC = 27;
 
+    struct ASCIICodes{
+        static constexpr int ENTER = 10;
+        static constexpr int ESC = 27;
+        static constexpr int SPACE = 32;
+        static constexpr int a = 97;
+        static constexpr int c = 99;
+        static constexpr int d = 100;
+        static constexpr int f = 102;
+        static constexpr int j = 106;
+        static constexpr int l = 108;
+        static constexpr int m = 109;
+        static constexpr int o = 111;
+        static constexpr int r = 114;
+        static constexpr int s = 115;
+        static constexpr int BACKSPACE = 263;
+    };
+
+private:
     void initializeCMDLine();
 
     void initializeDisplay();

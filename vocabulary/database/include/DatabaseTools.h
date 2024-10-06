@@ -12,8 +12,6 @@ template <typename... T>
 concept allStringsInVariadic = (std::is_same_v<T, std::string> && ...);
 
 class DatabaseTools: private DatabaseUtils{
-    bool checkDatabaseExistence(std::string dbName);
-
     void openDatabase(std::string dbName);
 
     template<typename... Strings>
@@ -32,7 +30,7 @@ public:
     DatabaseTools(const DatabaseTools& db) = delete;
     DatabaseTools& operator= (const DatabaseTools& db) = delete;
 
-    void addWord(std::string & word);
+    bool addWord(std::string & word);
     std::optional<wordsTableRow> lookUpWord(std::string &word);
 
     void addDefinition(std::string &word, std::string &definition);

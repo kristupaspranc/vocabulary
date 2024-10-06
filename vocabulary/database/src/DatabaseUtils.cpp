@@ -5,14 +5,14 @@
 
 
 void DatabaseUtils::checkError(){
-    if (dbCode != SQLITE_OK){
+    if (dbCode != SQLITE_OK && dbCode != SQLITE_CONSTRAINT){
         std::cerr << "SQL error: " << errMsg << std::endl;
         sqlite3_free(errMsg);
     }
 }
 
 DatabaseUtils::~DatabaseUtils(){
-    if (dbCode){
+    if (dbCode != SQLITE_OK && dbCode != SQLITE_CONSTRAINT){
         std::cout << "DB Error: " << sqlite3_errmsg(dbHandle) << "\n";
         sqlite3_close(dbHandle);
     }

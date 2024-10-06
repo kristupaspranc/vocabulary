@@ -15,22 +15,22 @@ Interface::Interface(){
 }
 
 Interface::~Interface(){
-    delwin(displayWin);
-    delwin(CMDLine);
+    delwin(m_displayWin);
+    delwin(m_CMDLine);
     endwin();
 }
 
 void Interface::run(){
     int ch;
 
-    while ((ch =  getch()) != ESC){
+    while ((ch =  getch()) != ASCIICodes::ESC){
         switch(ch) {
-            case 99: // c
+            case ASCIICodes::c:
                 {
                     createVocabulary();
                 }
                 break;
-            case 111: // o
+            case ASCIICodes::o:
                 {
                     openVocabulary();
                 }
@@ -44,13 +44,13 @@ void Interface::run(){
 
 void Interface::initializeCMDLine(){
     //setting first two to 0's defaults to filling the window till the end
-    CMDLine = newwin(0, 0, LINES - 2, 0);
-    wrefresh(CMDLine);
+    m_CMDLine = newwin(0, 0, LINES - 2, 0);
+    wrefresh(m_CMDLine);
 }
 
 void Interface::initializeDisplay(){
-    displayWin = newwin(LINES - 2, 0, 0, 0);
-    centerRow = std::floor(static_cast<float>(getmaxy(displayWin))/2);
+    m_displayWin = newwin(LINES - 2, 0, 0, 0);
+    m_centerRow = std::floor(static_cast<float>(getmaxy(m_displayWin))/2);
     initialDisplay();
 }
 
@@ -72,55 +72,55 @@ void Interface::startingScreen(){
 }
 
 void Interface::getScreenSize(){
-    getmaxyx(stdscr, screenSize.first, screenSize.second);
+    getmaxyx(stdscr, m_screenSize.first, m_screenSize.second);
 }
 
 template <stringArray T, std::size_t N>
 void Interface::printInCenter(const std::array<T,N> &array){
-    werase(displayWin);
+    werase(m_displayWin);
     int raiseBy = std::ceil((float)N / 2);
     for (int i = 0; i < N; i++){
-        mvwprintw(displayWin, centerRow + i - raiseBy, 1, "%s", array[i].c_str());
+        mvwprintw(m_displayWin, m_centerRow + i - raiseBy, 1, "%s", array[i].c_str());
     }
-    wrefresh(displayWin);
+    wrefresh(m_displayWin);
 }
 
 void Interface::printInCenter(const std::string &text){
-    wclear(displayWin);
-    mvwprintw(displayWin, centerRow, 1, "%s", text.c_str());
-    wrefresh(displayWin);
+    wclear(m_displayWin);
+    mvwprintw(m_displayWin, m_centerRow, 1, "%s", text.c_str());
+    wrefresh(m_displayWin);
 }
 
 template <stringArray T, std::size_t N>
 void Interface::printInCenter(const std::array<T,N> &array, const std::vector<T> &vec){
-    werase(displayWin);
+    werase(m_displayWin);
     int raiseBy = std::ceil((float)N / 2);
     for (int i = 0; i < N; i++){
-        mvwprintw(displayWin, centerRow + i - raiseBy, 1, "%s", array[i].c_str());
+        mvwprintw(m_displayWin, m_centerRow + i - raiseBy, 1, "%s", array[i].c_str());
     }
     for (int i = 0; i < vec.size(); i++){
-        mvwprintw(displayWin, centerRow + i + N - raiseBy, 1, "%s", vec[i].c_str());
+        mvwprintw(m_displayWin, m_centerRow + i + N - raiseBy, 1, "%s", vec[i].c_str());
     }
-    wrefresh(displayWin);
+    wrefresh(m_displayWin);
 }
 
 Command Interface::writeCommand(){
     int ch;
     std::string cmd = "";
 
-    while ((ch=getch()) != 10){ // <Enter>
+    while ((ch=getch()) != ASCIICodes::ENTER){
         switch(ch) {
-            case 263: // backspace
+            case ASCIICodes::BACKSPACE:
                 {
                     if (!cmd.empty())
                         cmd.pop_back();
-                        mvwdelch(CMDLine, 1, cmd.length());
+                        mvwdelch(m_CMDLine, 1, cmd.length());
                 }
                 break;
-            case ESC:
+            case ASCIICodes::ESC:
                 {
-                    werase(CMDLine);
-                    wrefresh(CMDLine);
+                    werase(m_CMDLine);
+                    wrefresh(m_CMDLine);
                     return std::nullopt;
                 }
                 break;
@@ -128,15 +128,15 @@ Command Interface::writeCommand(){
                 {
                     char symbol = static_cast<char>(ch);
                     cmd.push_back(symbol);
-                    mvwaddch(CMDLine, 1, cmd.length() - 1, symbol);
+                    mvwaddch(m_CMDLine, 1, cmd.length() - 1, symbol);
                 }
                 break;
         }
-        wrefresh(CMDLine);
+        wrefresh(m_CMDLine);
     }
 
-    werase(CMDLine);
-    wrefresh(CMDLine);
+    werase(m_CMDLine);
+    wrefresh(m_CMDLine);
 
     return cmd;
 }
@@ -160,23 +160,26 @@ void Interface::addWord(DatabaseTools &voc){
     Command word = writeCommand();
     if (!word) return;
 
-    voc.addWord(*word);
+    if (!voc.addWord(*word)){
+        printInCenter("The word is already added");
+        getch();
+    }
 }
 
 void Interface::lookUpWord(DatabaseTools &voc){
         printInCenter("Enter the word to look up");
         Command word = writeCommand();
         if (!word) return;
-        werase(displayWin);
+        werase(m_displayWin);
         std::optional<std::pair<int, bool>>
             row = voc.lookUpWord(*word);
         if (row){
-            mvwprintw(displayWin, 3, 3, "%s %d %d",
+            mvwprintw(m_displayWin, 3, 3, "%s %d %d",
                     word->c_str(),
                     row->first,
                     row->second
                     );
-            wrefresh(displayWin);
+            wrefresh(m_displayWin);
         }
         else 
             printInCenter("There is no such word");
@@ -189,20 +192,20 @@ void Interface::displayDefinitions(DatabaseTools &voc){
     Command word = writeCommand();
     if (!word) return;
 
-    werase(displayWin);
+    werase(m_displayWin);
     std::array<std::string, 1> text{{"Here are the definitions"}};
     std::optional<std::vector<std::string>>
         definitions = voc.lookUpDefinitions(*word);
     if (definitions){
         for (std::size_t i = 0; i < definitions->size(); i++)
-            mvwprintw(displayWin, i+3, 3, "%s",
+            mvwprintw(m_displayWin, i+3, 3, "%s",
                     (*definitions)[i].c_str());
         printInCenter(text, *definitions);
     }
     else 
         printInCenter("There is no such word");
 
-    wrefresh(displayWin);
+    wrefresh(m_displayWin);
     getch();
 }
 
@@ -229,7 +232,7 @@ void Interface::displaySentences(DatabaseTools &voc){
         definitions = voc.lookUpSentences(*word);
     if (definitions){
         for (std::size_t i = 0; i < definitions->size(); i++)
-            mvwprintw(displayWin, i+3, 3, "%s",
+            mvwprintw(m_displayWin, i+3, 3, "%s",
                     (*definitions)[i].c_str());
         printInCenter(text, *definitions);
     }
@@ -261,27 +264,27 @@ void Interface::openVocabulary(){
     defaultVocabularyDisplay();
     int ch;
 
-    while ((ch = getch()) != ESC){
+    while ((ch = getch()) != ASCIICodes::ESC){
         switch(ch) {
-            case 97: // a
+            case ASCIICodes::a:
                 addWord(vocabulary);
                 break;
-            case 108: // l
+            case ASCIICodes::l:
                 lookUpWord(vocabulary);
                 break;
-            case 100: //d
+            case ASCIICodes::d:
                 displayDefinitions(vocabulary);
                 break;
-            case 102: // f
+            case ASCIICodes::f:
                 addDefinition(vocabulary);
                 break;
-            case 115: //s
+            case ASCIICodes::s:
                 displaySentences(vocabulary);
                 break;
-            case 106: // j
+            case ASCIICodes::j:
                 addSentence(vocabulary);
                 break;
-            case 114: //r
+            case ASCIICodes::r:
                 randomWord(vocabulary);
                 break;
             default:
@@ -316,9 +319,9 @@ void Interface::randomWord(DatabaseTools &vocabulary){
 
     int ch;
 
-    while((ch = getch()) != ESC){
+    while((ch = getch()) != ASCIICodes::ESC){
         switch (ch){
-        case 97: // a
+        case ASCIICodes::a:
             {
                 printInCenter("Add a sentence with context for word " + *random_word);
                 Command sentence = writeCommand();
@@ -327,7 +330,7 @@ void Interface::randomWord(DatabaseTools &vocabulary){
                 vocabulary.addSentence(*random_word, *sentence);
                 break;
             }
-        case 32: // <SPACE>
+        case ASCIICodes::SPACE:
             {
                 printInCenter("Add a sentence with context for word " + *random_word);
                 Command sentence = writeCommand();
@@ -337,7 +340,7 @@ void Interface::randomWord(DatabaseTools &vocabulary){
                 random_word = vocabulary.getRandomFlaggedWord();
                 break;
             }
-        case 100: //d
+        case ASCIICodes::d:
             {
                 std::array<std::string, 1> text = {{
                     "The definition(s) of word " + *random_word
@@ -350,7 +353,7 @@ void Interface::randomWord(DatabaseTools &vocabulary){
                 getch();
                 break;
             }
-        case 109: //m
+        case ASCIICodes::m:
             {
                 vocabulary.unflagWord(*random_word);
                 printInCenter("The word '" + *random_word + "' was unflagged");

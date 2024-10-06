@@ -25,9 +25,14 @@ void DatabaseTools::execInsertUpdateStatement(
     checkError();
 }
 
-void DatabaseTools::addWord(std::string & word){
+bool DatabaseTools::addWord(std::string & word){
     std::string cmd = R"(INSERT INTO words (word) VALUES (?);)";
     execInsertUpdateStatement(cmd, word);
+
+    if (dbCode == SQLITE_CONSTRAINT)
+        return false;
+
+    return true;
 }
 
 std::optional<wordsTableRow> DatabaseTools::lookUpWord(std::string &word){
