@@ -29,8 +29,10 @@ bool DatabaseTools::addWord(std::string & word){
     std::string cmd = R"(INSERT INTO words (word) VALUES (?);)";
     execInsertUpdateStatement(cmd, word);
 
-    if (m_dbCode == SQLITE_CONSTRAINT)
+    if (m_dbCode == SQLITE_CONSTRAINT){
+        flagWord(word);
         return false;
+    }
 
     return true;
 }
@@ -176,6 +178,12 @@ void DatabaseTools::unflagWord(std::string &word){
     execInsertUpdateStatement(cmd, word);
 }
 
+void DatabaseTools::flagWord(std::string &word){
+    std::string cmd = R"(UPDATE words
+        SET repeat_flag = 1
+        WHERE word = (?)
+        )";
 
-
+    execInsertUpdateStatement(cmd, word);
+}
 

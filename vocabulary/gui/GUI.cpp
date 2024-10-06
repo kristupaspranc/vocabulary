@@ -166,7 +166,7 @@ void Interface::addWord(DatabaseTools &voc){
     if (!word) return;
 
     if (!voc.addWord(*word)){
-        printInCenter("The word is already added");
+        printInCenter("The word was already added, thus, now flagged");
         getch();
     }
 }

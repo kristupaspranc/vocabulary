@@ -44,4 +44,6 @@ public:
     bool singleFlaggedWordExistance();
 
     void unflagWord(std::string &word);
+
+    void flagWord(std::string &word);
 };
