@@ -16,34 +16,34 @@ class DatabaseTools: private DatabaseUtils{
 
     template<typename... Strings>
     void execInsertUpdateStatement(
-            std::string &cmd, allStringsInVariadic auto const&... insertives);
+            const std::string &cmd, allStringsInVariadic auto const&... insertives);
 
     template<typename... Strings>
     sqlite3_stmt *bindText(
-            std::string &cmd, allStringsInVariadic auto const&... insertives);
+            const std::string &cmd, allStringsInVariadic auto const&... insertives);
 
     std::optional<std::vector<std::string>> lookUp(
-            std::string &cmd, std::string & word);
+            const std::string &cmd, const std::string &word);
 
 public:
-    DatabaseTools(std::string & dbName);
+    DatabaseTools(const std::string & dbName);
     DatabaseTools(const DatabaseTools& db) = delete;
     DatabaseTools& operator= (const DatabaseTools& db) = delete;
 
-    bool addWord(std::string & word);
-    std::optional<wordsTableRow> lookUpWord(std::string &word);
+    bool addWord(const std::string & word);
+    std::optional<wordsTableRow> lookUpWord(const std::string &word);
 
-    void addDefinition(std::string &word, std::string &definition);
-    std::optional<std::vector<std::string>> lookUpDefinitions(std::string &word);
+    void addDefinition(const std::string &word, const std::string &definition);
+    std::optional<std::vector<std::string>> lookUpDefinitions(const std::string &word);
 
-    void addSentence(std::string &word, std::string &sentence);
-    std::optional<std::vector<std::string>> lookUpSentences(std::string &word);
+    void addSentence(const std::string &word, const std::string &sentence);
+    std::optional<std::vector<std::string>> lookUpSentences(const std::string &word);
 
     std::optional<std::string> getRandomFlaggedWord();
 
     bool singleFlaggedWordExistance();
 
-    void unflagWord(std::string &word);
+    void unflagWord(const std::string &word);
 
-    void flagWord(std::string &word);
+    void flagWord(const std::string &word);
 };

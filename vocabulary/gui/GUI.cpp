@@ -2,9 +2,11 @@
 
 #include <array>
 #include <cmath>
+#include <filesystem>
 #include <optional>
 
 #include <ncurses.h>
+#include <string>
 
 Interface::Interface(){
     startingScreen();
@@ -27,10 +29,16 @@ void Interface::run(){
         switch(ch) {
             case ASCIICodes::c:
                 {
+                    if (DatabaseCreation::s_getNumberOfDatabases() >= 7){
+                        printInCenter("Seven databases are supported, delete to add");
+                        getch();
+                        break;
+                    }
+
                     Command vocName = createVocabulary();
+
                     if (vocName)
                         openVocabulary(*vocName);
-                    break;
                 }
                 break;
             case ASCIICodes::o:
@@ -58,7 +66,7 @@ void Interface::initializeDisplay(){
 }
 
 void Interface::initialDisplay(){
-    std::array<std::string, 2> text = {{
+    const std::array<std::string, 2> text = {{
         "o - Open vocabulary",
         "c - Create new vocabulary"
     }};
@@ -97,12 +105,24 @@ void Interface::printInCenter(const std::string &text){
 template <stringArray T, std::size_t N>
 void Interface::printInCenter(const std::array<T,N> &array, const std::vector<T> &vec){
     werase(m_displayWin);
-    int raiseBy = std::ceil((float)N / 2);
+    int raiseBy = std::ceil((float)(N + vec.size()) / 2);
     for (int i = 0; i < N; i++){
         mvwprintw(m_displayWin, m_centerRow + i - raiseBy, 1, "%s", array[i].c_str());
     }
     for (int i = 0; i < vec.size(); i++){
         mvwprintw(m_displayWin, m_centerRow + i + N - raiseBy, 1, "%s", vec[i].c_str());
+    }
+    wrefresh(m_displayWin);
+}
+
+void Interface::printInCenter(const std::string &text, const std::vector<std::string> &vec){
+    werase(m_displayWin);
+    int raiseBy = std::ceil(((float)(vec.size() + 1) / 2));
+
+    mvwprintw(m_displayWin, m_centerRow + - raiseBy, 1, "%s", text.c_str());
+
+    for (int i = 0; i < vec.size(); i++){
+        mvwprintw(m_displayWin, m_centerRow + i + 1 - raiseBy, 1, "%s", vec[i].c_str());
     }
     wrefresh(m_displayWin);
 }
@@ -198,14 +218,11 @@ void Interface::displayDefinitions(DatabaseTools &voc){
     if (!word) return;
 
     werase(m_displayWin);
-    std::array<std::string, 1> text{{"Here are the definitions"}};
     std::optional<std::vector<std::string>>
         definitions = voc.lookUpDefinitions(*word);
+
     if (definitions){
-        for (std::size_t i = 0; i < definitions->size(); i++)
-            mvwprintw(m_displayWin, i+3, 3, "%s",
-                    (*definitions)[i].c_str());
-        printInCenter(text, *definitions);
+        printInCenter("Here are the definitions", *definitions);
     }
     else 
         printInCenter("There is no such word");
@@ -231,15 +248,11 @@ void Interface::displaySentences(DatabaseTools &voc){
     Command word = writeCommand();
     if (!word) return;
 
-    std::array<std::string, 1> text{{"Here are the sentences"}};
-
     std::optional<std::vector<std::string>>
         definitions = voc.lookUpSentences(*word);
+
     if (definitions){
-        for (std::size_t i = 0; i < definitions->size(); i++)
-            mvwprintw(m_displayWin, i+3, 3, "%s",
-                    (*definitions)[i].c_str());
-        printInCenter(text, *definitions);
+        printInCenter("Here are the sentences", *definitions);
     }
     else
         printInCenter("There is no such word");
@@ -259,20 +272,72 @@ void Interface::addSentence(DatabaseTools &voc){
     voc.addSentence(*word, *sentence);
 }
 
-void Interface::openVocabulary(std::string &vocName){
+void Interface::openVocabulary(const std::string &vocName){
     runVocabulary(vocName);
 }
 
 void Interface::openVocabulary(){
-    Command vocName = initialVocabulary();
-    if (!vocName){
+    std::map<char, std::string> bindedNames;
+
+    getMappedNames(bindedNames);
+
+    if (!bindedNames.size()){
+        printInCenter("No vocabularies exist");
+        getch();
         return;
     }
 
-    runVocabulary(*vocName);
+    std::vector<std::string> text;
+    text.reserve(bindedNames.size());
+
+    for (const auto &pair: bindedNames)
+        text.emplace_back(std::string{pair.first} + " - " + pair.second);
+
+    printInCenter("Existing vocabularies", text);
+
+    int ch;
+    while ((ch = getch()) != ASCIICodes::ESC){
+        if (char key = static_cast<char>(ch); bindedNames.contains(key)){
+            runVocabulary(bindedNames[key]);
+        }
+        printInCenter("Existing vocabularies", text);
+    }
 }
 
-void Interface::runVocabulary(std::string &vocName){
+void Interface::getMappedNames(std::map<char, std::string> &map){
+    const std::array<char, 7> bindsToVocabularyNames{{
+        'a', 's', 'd', 'f', 'j', 'k', 'l'
+    }};
+
+    std::filesystem::directory_iterator dirIter;
+
+    try{
+        dirIter = std::filesystem::directory_iterator(
+                std::filesystem::current_path() / "Databases"
+                );
+    }
+    catch (const std::filesystem::filesystem_error& e){
+        return;
+    }
+
+    for (const std::filesystem::directory_entry &dirEntry: dirIter){
+        std::string path = dirEntry.path();
+
+        if (path.size() > 3)
+            if (path.substr(path.size() - 3, 3) == ".db"){
+                std::string::size_type nextLastSlashPos = path.rfind("/", std::string::npos) + 1;
+
+                map.emplace(std::make_pair(
+                            bindsToVocabularyNames[map.size()],
+                            path.substr(
+                                nextLastSlashPos,
+                                path.size() - nextLastSlashPos - 3)
+                            ));
+            }
+    }
+}
+
+void Interface::runVocabulary(const std::string &vocName){
     DatabaseTools vocabulary{vocName};
     defaultVocabularyDisplay();
     int ch;
@@ -307,8 +372,8 @@ void Interface::runVocabulary(std::string &vocName){
     }
 }
 
-void Interface::randomWordInitialDisplay(std::string &word){
-    std::array<std::string, 5> text ={{
+void Interface::randomWordInitialDisplay(const std::string &word){
+    const std::array<std::string, 5> text ={{
         "The random word is " + word,
         "a - add sentence to the word",
         "<SPACE> - add sentence to the word and go to next word",
@@ -355,14 +420,11 @@ void Interface::randomWord(DatabaseTools &vocabulary){
             }
         case ASCIICodes::d:
             {
-                std::array<std::string, 1> text = {{
-                    "The definition(s) of word " + *random_word
-                }};
-
                 std::optional<std::vector<std::string>>
                     definitions = vocabulary.lookUpDefinitions(*random_word);
 
-                printInCenter(text, *definitions);
+                printInCenter("The definition(s) of word " + *random_word,
+                    *definitions);
                 getch();
                 break;
             }
@@ -387,7 +449,7 @@ void Interface::randomWord(DatabaseTools &vocabulary){
 }
 
 void Interface::defaultVocabularyDisplay(){
-    std::array<std::string, 7> text = {{
+    const std::array<std::string, 7> text = {{
         "a - Add word or phrase to the vocabulary",
         "d - Look at definitions of word",
         "l - Look up a word",
@@ -407,7 +469,7 @@ Command Interface::initialVocabulary(){
     if (!vocName) return std::nullopt;
 
     while(!DatabaseUtils::s_checkDatabaseExistence(*vocName)){
-        std::array<std::string, 2> text = {{
+        const std::array<std::string, 2> text = {{
             "Vocabulary with given name does not exist",
             "Enter name of the vocabulary to enter"
         }};
@@ -420,3 +482,4 @@ Command Interface::initialVocabulary(){
 
     return vocName;
 }
+

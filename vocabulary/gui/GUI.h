@@ -1,3 +1,4 @@
+#include <map>
 #include <string>
 #include <utility>
 
@@ -51,9 +52,9 @@ private:
 
     void openVocabulary();
 
-    void openVocabulary(std::string &vocName);
+    void openVocabulary(const std::string &vocName);
 
-    inline void runVocabulary(std::string &vocName);
+    inline void runVocabulary(const std::string &vocName);
 
     void defaultVocabularyDisplay();
 
@@ -61,11 +62,13 @@ private:
 
     void randomWord(DatabaseTools &vocabulary);
 
-    void randomWordInitialDisplay(std::string &word);
+    void randomWordInitialDisplay(const std::string &word);
 
     void initialDisplay();
 
     void printInCenter(const std::string &text);
+
+    void printInCenter(const std::string &text, const std::vector<std::string> &vec);
 
     template <stringArray T, std::size_t N>
     void printInCenter(const std::array<T,N> &array);
@@ -84,6 +87,8 @@ private:
     void displaySentences(DatabaseTools &voc);
 
     void addSentence(DatabaseTools &voc);
+
+    void getMappedNames(std::map<char, std::string> &map);
 
 public:
     Interface();

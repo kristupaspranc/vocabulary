@@ -1,5 +1,6 @@
 #include "DatabaseCreation.h"
 
+#include <algorithm>
 #include <filesystem>
 
 
@@ -17,7 +18,6 @@ void DatabaseCreation::checkDatabaseDirectory(){
     try {
         std::filesystem::create_directory(std::filesystem::current_path() / "Databases");
     }
-    // TODO implement catching
     catch (const std::filesystem::filesystem_error& e) {
         m_log << "Filesystem error: " << e.what() << "\n";
     }
@@ -65,4 +65,24 @@ void DatabaseCreation::execStatement(std::string &cmd){
     m_dbCode = sqlite3_step(stmt);
     sqlite3_finalize(stmt);
     checkSQLError();
+}
+
+
+int DatabaseCreation::s_getNumberOfDatabases(){
+    std::filesystem::directory_iterator dirIter;
+
+    try{
+        dirIter = std::filesystem::directory_iterator(
+                std::filesystem::current_path() / "Databases"
+                );
+    }
+    catch (const std::filesystem::filesystem_error& e){
+        return 0;
+    }
+
+    return std::count_if(
+            begin(dirIter),
+            end(dirIter),
+            [](auto& entry) { return entry.is_regular_file(); }
+            );
 }

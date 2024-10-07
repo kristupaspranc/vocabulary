@@ -20,4 +20,6 @@ public:
     void createSentencesTable();
 
     void createDefinitionsTable();
+
+    static int s_getNumberOfDatabases();
 };
