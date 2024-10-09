@@ -2,12 +2,14 @@
 
 #include <algorithm>
 #include <filesystem>
+#include <iostream>
 
 
-DatabaseCreation::DatabaseCreation(std::string & dbName){
-    dbName = "Databases/" + dbName + ".db";
-
+DatabaseCreation::DatabaseCreation(){
     checkDatabaseDirectory();
+}
+
+void DatabaseCreation::createDatabaseWithTables(const std::string &dbName){
     createDatabase(dbName);
     createWordTable();
     createSentencesTable();
@@ -19,11 +21,14 @@ void DatabaseCreation::checkDatabaseDirectory(){
         std::filesystem::create_directory(std::filesystem::current_path() / "Databases");
     }
     catch (const std::filesystem::filesystem_error& e) {
-        m_log << "Filesystem error: " << e.what() << "\n";
+        std::cerr << e.what() << std::endl;
+        std::exit(EXIT_FAILURE);
     }
 }
 
 void DatabaseCreation::createDatabase(std::string dbName){
+    dbName = "Databases/" + dbName + ".db";
+
     m_dbCode = sqlite3_open_v2(dbName.c_str(), &m_dbHandle,
             SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, 0);
 
@@ -67,7 +72,6 @@ void DatabaseCreation::execStatement(std::string &cmd){
     checkSQLError();
 }
 
-
 int DatabaseCreation::s_getNumberOfDatabases(){
     std::filesystem::directory_iterator dirIter;
 
@@ -85,4 +89,15 @@ int DatabaseCreation::s_getNumberOfDatabases(){
             end(dirIter),
             [](auto& entry) { return entry.is_regular_file(); }
             );
+}
+
+void DatabaseCreation::deleteDatabase(std::string database){
+    database += ".db";
+
+    try {
+        std::filesystem::remove(std::filesystem::current_path() / "Databases" / database);
+    }
+    catch (const std::filesystem::filesystem_error& e) {
+        s_log << "Filesystem error: " << e.what() << "\n";
+    }
 }

@@ -90,6 +90,10 @@ private:
 
     void getMappedNames(std::map<char, std::string> &map);
 
+    Command selectVocabulary(const std::string &msg);
+
+    void deleteVocabulary();
+
 public:
     Interface();
     ~Interface();

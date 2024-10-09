@@ -2,14 +2,9 @@
 
 #include "DatabaseUtils.h"
 
-
 class DatabaseCreation: private DatabaseUtils{
+private:
     void execStatement(std::string &cmd);
-
-public:
-    DatabaseCreation(std::string & dbName);
-    DatabaseCreation(const DatabaseCreation& db) = delete;
-    DatabaseCreation& operator= (const DatabaseCreation& db) = delete;
 
     void checkDatabaseDirectory();
 
@@ -21,5 +16,14 @@ public:
 
     void createDefinitionsTable();
 
+public:
+    DatabaseCreation();
+    DatabaseCreation(const DatabaseCreation& db) = delete;
+    DatabaseCreation& operator= (const DatabaseCreation& db) = delete;
+
+    void createDatabaseWithTables(const std::string &dbName);
+
     static int s_getNumberOfDatabases();
+
+    void deleteDatabase(std::string database);
 };

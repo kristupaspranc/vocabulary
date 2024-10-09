@@ -7,12 +7,15 @@
 
 
 class DatabaseUtils{
+private:
+    static std::size_t s_referenceCount;
+
 protected:
     int m_dbCode;
     sqlite3 * m_dbHandle;
     char * m_errMsg = 0;
 
-    std::ofstream m_log;
+    static std::ofstream s_log;
 
 protected:
     void checkSQLError();

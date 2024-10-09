@@ -42,9 +42,10 @@ void Interface::run(){
                 }
                 break;
             case ASCIICodes::o:
-                {
-                    openVocabulary();
-                }
+                openVocabulary();
+                break;
+            case ASCIICodes::d:
+                deleteVocabulary();
                 break;
             default:
                 break;
@@ -66,9 +67,10 @@ void Interface::initializeDisplay(){
 }
 
 void Interface::initialDisplay(){
-    const std::array<std::string, 2> text = {{
+    const std::array<std::string, 3> text = {{
         "o - Open vocabulary",
-        "c - Create new vocabulary"
+        "c - Create new vocabulary",
+        "d - Delete existing vocabulary"
     }};
 
     printInCenter(text);
@@ -164,6 +166,16 @@ Command Interface::writeCommand(){
     return cmd;
 }
 
+void Interface::deleteVocabulary(){
+    Command vocName = selectVocabulary("Select a vocabulary to delete");
+
+    if (!vocName)
+        return;
+
+    DatabaseCreation vocCreator;
+    vocCreator.deleteDatabase(*vocName);
+}
+
 std::optional<std::string> Interface::createVocabulary(){
     printInCenter("Enter name of the new vocabulary");
 
@@ -172,7 +184,10 @@ std::optional<std::string> Interface::createVocabulary(){
         return std::nullopt;
     }
 
-    (void)DatabaseCreation{*vocName};
+    {
+        DatabaseCreation vocCreator;
+        vocCreator.createDatabaseWithTables(*vocName);
+    }
 
     printInCenter("New vocabulary created");
     getch();
@@ -277,6 +292,13 @@ void Interface::openVocabulary(const std::string &vocName){
 }
 
 void Interface::openVocabulary(){
+    Command vocName = selectVocabulary("Select a vocabulary to enter");
+
+    if (vocName)
+        runVocabulary(*vocName);
+}
+
+Command Interface::selectVocabulary(const std::string &msg){
     std::map<char, std::string> bindedNames;
 
     getMappedNames(bindedNames);
@@ -284,7 +306,7 @@ void Interface::openVocabulary(){
     if (!bindedNames.size()){
         printInCenter("No vocabularies exist");
         getch();
-        return;
+        return std::nullopt;
     }
 
     std::vector<std::string> text;
@@ -293,15 +315,17 @@ void Interface::openVocabulary(){
     for (const auto &pair: bindedNames)
         text.emplace_back(std::string{pair.first} + " - " + pair.second);
 
-    printInCenter("Existing vocabularies", text);
+    printInCenter(msg, text);
 
     int ch;
     while ((ch = getch()) != ASCIICodes::ESC){
         if (char key = static_cast<char>(ch); bindedNames.contains(key)){
-            runVocabulary(bindedNames[key]);
+            return bindedNames[key];
         }
-        printInCenter("Existing vocabularies", text);
+        printInCenter(msg, text);
     }
+
+    return std::nullopt;
 }
 
 void Interface::getMappedNames(std::map<char, std::string> &map){
