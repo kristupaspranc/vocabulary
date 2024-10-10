@@ -24,6 +24,7 @@ class Interface{
         static constexpr int ENTER = 10;
         static constexpr int ESC = 27;
         static constexpr int SPACE = 32;
+        static constexpr int Y = 89;
         static constexpr int a = 97;
         static constexpr int c = 99;
         static constexpr int d = 100;
@@ -31,9 +32,11 @@ class Interface{
         static constexpr int j = 106;
         static constexpr int l = 108;
         static constexpr int m = 109;
+        static constexpr int n = 110;
         static constexpr int o = 111;
         static constexpr int r = 114;
         static constexpr int s = 115;
+        static constexpr int y = 121;
         static constexpr int BACKSPACE = 263;
     };
 

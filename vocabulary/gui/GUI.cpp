@@ -172,7 +172,18 @@ void Interface::deleteVocabulary(){
     if (!vocName)
         return;
 
+    printInCenter("Proceed with deletion of vocabulary " +
+                *vocName +
+                "? [Y/n]");
+
+    int ch;
+    while ((ch = getch()) != ASCIICodes::Y  && ch != ASCIICodes::y)
+            if (ch == ASCIICodes::ESC || ch == ASCIICodes::n) return;
+
     DatabaseCreation::s_deleteDatabase(*vocName);
+
+    printInCenter("Database " + *vocName + " deleted");
+    getch();
 }
 
 std::optional<std::string> Interface::createVocabulary(){
