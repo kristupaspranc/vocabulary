@@ -101,3 +101,8 @@ void DatabaseCreation::s_deleteDatabase(std::string database){
         s_log << "Filesystem error: " << e.what() << "\n";
     }
 }
+
+bool DatabaseCreation::s_checkDatabaseExistence(std::string dbName){
+    dbName = "Databases/" + dbName + ".db";
+    return std::filesystem::exists(dbName);
+}

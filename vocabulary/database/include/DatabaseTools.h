@@ -29,6 +29,9 @@ public:
     DatabaseTools(const std::string & dbName);
     DatabaseTools(const DatabaseTools& db) = delete;
     DatabaseTools& operator= (const DatabaseTools& db) = delete;
+    DatabaseTools(const DatabaseTools&& db){}
+    DatabaseTools& operator= (const DatabaseTools&& db){return *this;}
+    ~DatabaseTools() = default;
 
     bool addWord(const std::string & word);
     std::optional<wordsTableRow> lookUpWord(const std::string &word);

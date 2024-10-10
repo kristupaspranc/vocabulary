@@ -99,6 +99,10 @@ private:
 
 public:
     Interface();
+    Interface(const Interface& inter) = delete;
+    Interface& operator=(const Interface& inter) = delete;
+    Interface(const Interface&& inter) = delete;
+    Interface operator=(const Interface&& inter) = delete;
     ~Interface();
 
     void run();

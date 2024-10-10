@@ -1,7 +1,6 @@
 #pragma once
 
 #include <fstream>
-#include <string>
 
 #include <sqlite3.h>
 
@@ -24,7 +23,7 @@ public:
     DatabaseUtils();
     DatabaseUtils(const DatabaseUtils& db) = delete;
     DatabaseUtils& operator= (const DatabaseUtils& db) = delete;
+    DatabaseUtils(DatabaseUtils&& db);
+    DatabaseUtils& operator= (DatabaseUtils&& db);
     ~DatabaseUtils();
-
-    static bool s_checkDatabaseExistence(std::string dbName);
 };

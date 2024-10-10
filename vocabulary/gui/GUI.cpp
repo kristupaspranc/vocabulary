@@ -1,4 +1,5 @@
 #include "GUI.h"
+#include "DatabaseCreation.h"
 
 #include <array>
 #include <cmath>
@@ -190,8 +191,12 @@ std::optional<std::string> Interface::createVocabulary(){
     printInCenter("Enter name of the new vocabulary");
 
     Command vocName = writeCommand();
-    if (!vocName){
-        return std::nullopt;
+    if (!vocName) return std::nullopt; 
+
+    while (DatabaseCreation::s_checkDatabaseExistence(*vocName)){
+        printInCenter("Vocabulary with such name already exists, enter a new name");
+        vocName = writeCommand();
+        if (!vocName) return std::nullopt;
     }
 
     {
@@ -358,7 +363,7 @@ void Interface::getMappedNames(std::map<char, std::string> &map){
         std::string path = dirEntry.path();
 
         if (path.size() > 3)
-            if (path.substr(path.size() - 3, 3) == ".db"){
+            if (path.ends_with(".db")){
                 std::string::size_type nextLastSlashPos = path.rfind("/", std::string::npos) + 1;
 
                 map.emplace(std::make_pair(
@@ -502,7 +507,7 @@ Command Interface::initialVocabulary(){
     Command vocName = writeCommand();
     if (!vocName) return std::nullopt;
 
-    while(!DatabaseUtils::s_checkDatabaseExistence(*vocName)){
+    while(!DatabaseCreation::s_checkDatabaseExistence(*vocName)){
         const std::array<std::string, 2> text = {{
             "Vocabulary with given name does not exist",
             "Enter name of the vocabulary to enter"

@@ -1,4 +1,3 @@
-#include <filesystem>
 #include <stdexcept>
 
 #include "DatabaseUtils.h"
@@ -30,14 +29,28 @@ DatabaseUtils::~DatabaseUtils(){
         s_log << "DB Error: " << sqlite3_errmsg(m_dbHandle) << "\n";
     }
 
-    sqlite3_close(m_dbHandle);
+    if (m_dbHandle)
+        sqlite3_close(m_dbHandle);
 
     s_referenceCount--;
     if (!s_referenceCount && s_log.is_open())
         s_log.close();
 }
 
-bool DatabaseUtils::s_checkDatabaseExistence(std::string dbName){
-    dbName = "Databases/" + dbName + ".db";
-    return std::filesystem::exists(dbName);
+DatabaseUtils::DatabaseUtils(DatabaseUtils&& db){
+    m_dbHandle = db.m_dbHandle;
+    db.m_dbHandle = nullptr;
+
+    m_errMsg = db.m_errMsg;
+    sqlite3_free(db.m_errMsg);
+}
+
+DatabaseUtils& DatabaseUtils::operator= (DatabaseUtils&& db){
+    m_dbHandle = db.m_dbHandle;
+    db.m_dbHandle = nullptr;
+
+    m_errMsg = db.m_errMsg;
+    sqlite3_free(db.m_errMsg);
+
+    return *this;
 }
