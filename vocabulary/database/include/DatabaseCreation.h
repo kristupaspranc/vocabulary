@@ -25,5 +25,5 @@ public:
 
     static int s_getNumberOfDatabases();
 
-    void deleteDatabase(std::string database);
+    static void s_deleteDatabase(std::string database);
 };

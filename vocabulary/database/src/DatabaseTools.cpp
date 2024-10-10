@@ -32,6 +32,7 @@ bool DatabaseTools::addWord(const std::string & word){
 
     if (m_dbCode == SQLITE_CONSTRAINT){
         flagWord(word);
+        m_dbCode = SQLITE_OK;
         return false;
     }
 

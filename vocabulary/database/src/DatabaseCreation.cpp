@@ -91,7 +91,7 @@ int DatabaseCreation::s_getNumberOfDatabases(){
             );
 }
 
-void DatabaseCreation::deleteDatabase(std::string database){
+void DatabaseCreation::s_deleteDatabase(std::string database){
     database += ".db";
 
     try {

@@ -4,9 +4,9 @@
 #include <cmath>
 #include <filesystem>
 #include <optional>
+#include <string>
 
 #include <ncurses.h>
-#include <string>
 
 Interface::Interface(){
     startingScreen();
@@ -172,8 +172,7 @@ void Interface::deleteVocabulary(){
     if (!vocName)
         return;
 
-    DatabaseCreation vocCreator;
-    vocCreator.deleteDatabase(*vocName);
+    DatabaseCreation::s_deleteDatabase(*vocName);
 }
 
 std::optional<std::string> Interface::createVocabulary(){
