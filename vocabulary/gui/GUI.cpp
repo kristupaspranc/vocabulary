@@ -89,12 +89,11 @@ void Interface::getScreenSize(){
     getmaxyx(stdscr, m_screenSize.first, m_screenSize.second);
 }
 
-template <stringArray T, std::size_t N>
-void Interface::printInCenter(const std::array<T,N> &array){
+void Interface::printInCenter(std::span<std::string const> span){
     werase(m_displayWin);
-    int raiseBy = std::ceil((float)N / 2);
-    for (int i = 0; i < N; i++){
-        mvwprintw(m_displayWin, m_centerRow + i - raiseBy, 1, "%s", array[i].c_str());
+    int raiseBy = std::ceil((float)span.size() / 2);
+    for (int i = 0; i < span.size(); i++){
+        mvwprintw(m_displayWin, m_centerRow + i - raiseBy, 1, "%s", span[i].c_str());
     }
     wrefresh(m_displayWin);
 }
@@ -105,27 +104,29 @@ void Interface::printInCenter(const std::string &text){
     wrefresh(m_displayWin);
 }
 
-template <stringArray T, std::size_t N>
-void Interface::printInCenter(const std::array<T,N> &array, const std::vector<T> &vec){
+void Interface::printInCenter(
+        std::span<std::string const> firstSpan,
+        std::span<std::string const> secondSpan){
     werase(m_displayWin);
-    int raiseBy = std::ceil((float)(N + vec.size()) / 2);
-    for (int i = 0; i < N; i++){
-        mvwprintw(m_displayWin, m_centerRow + i - raiseBy, 1, "%s", array[i].c_str());
+    int raiseBy = std::ceil((float)(firstSpan.size() + secondSpan.size()) / 2);
+    for (int i = 0; i < firstSpan.size(); i++){
+        mvwprintw(m_displayWin, m_centerRow + i - raiseBy, 1, "%s", firstSpan[i].c_str());
     }
-    for (int i = 0; i < vec.size(); i++){
-        mvwprintw(m_displayWin, m_centerRow + i + N - raiseBy, 1, "%s", vec[i].c_str());
+    for (int i = 0; i < secondSpan.size(); i++){
+        mvwprintw(m_displayWin, m_centerRow + i + firstSpan.size() - raiseBy, 1, "%s",
+                secondSpan[i].c_str());
     }
     wrefresh(m_displayWin);
 }
 
-void Interface::printInCenter(const std::string &text, const std::vector<std::string> &vec){
+void Interface::printInCenter(const std::string &text, std::span<std::string const> span){
     werase(m_displayWin);
-    int raiseBy = std::ceil(((float)(vec.size() + 1) / 2));
+    int raiseBy = std::ceil(((float)(span.size() + 1) / 2));
 
     mvwprintw(m_displayWin, m_centerRow + - raiseBy, 1, "%s", text.c_str());
 
-    for (int i = 0; i < vec.size(); i++){
-        mvwprintw(m_displayWin, m_centerRow + i + 1 - raiseBy, 1, "%s", vec[i].c_str());
+    for (int i = 0; i < span.size(); i++){
+        mvwprintw(m_displayWin, m_centerRow + i + 1 - raiseBy, 1, "%s", span[i].c_str());
     }
     wrefresh(m_displayWin);
 }
@@ -218,6 +219,7 @@ void Interface::addWord(DatabaseTools &voc){
     if (!voc.addWord(*word)){
         printInCenter("The word was already added, thus, now flagged");
         getch();
+        return;
     }
 }
 

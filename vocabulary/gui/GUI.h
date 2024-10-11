@@ -1,6 +1,7 @@
 #include <map>
 #include <string>
 #include <utility>
+#include <span>
 
 #include <ncurses.h>
 
@@ -71,13 +72,13 @@ private:
 
     void printInCenter(const std::string &text);
 
-    void printInCenter(const std::string &text, const std::vector<std::string> &vec);
+    void printInCenter(const std::string &text, std::span<std::string const> span);
 
-    template <stringArray T, std::size_t N>
-    void printInCenter(const std::array<T,N> &array);
+    void printInCenter(std::span<std::string const> span);
 
-    template <stringArray T, std::size_t N>
-    void printInCenter(const std::array<T,N> &array, const std::vector<T> &vec);
+    void printInCenter(
+            std::span<std::string const> firstSpan,
+            std::span<std::string const> secondSpan);
 
     void addWord(DatabaseTools &voc);
 
