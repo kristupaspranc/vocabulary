@@ -11,9 +11,6 @@
 
 using Command = std::optional<std::string>;
 
-template <typename T>
-concept stringArray = std::same_as<T, std::string>;
-
 class Interface{
     WINDOW *m_CMDLine;
     WINDOW *m_displayWin;
@@ -29,8 +26,6 @@ class Interface{
         static constexpr int a = 97;
         static constexpr int c = 99;
         static constexpr int d = 100;
-        static constexpr int f = 102;
-        static constexpr int j = 106;
         static constexpr int l = 108;
         static constexpr int m = 109;
         static constexpr int n = 110;
@@ -84,19 +79,23 @@ private:
 
     void lookUpWord(DatabaseTools &voc);
 
-    void displayDefinitions(DatabaseTools &voc);
+    Command addDefinition(DatabaseTools &voc, const std::string &word);
 
-    void addDefinition(DatabaseTools &voc);
-
-    void displaySentences(DatabaseTools &voc);
-
-    void addSentence(DatabaseTools &voc);
+    Command addSentence(DatabaseTools &voc, const std::string& word);
 
     void getMappedNames(std::map<char, std::string> &map);
 
     Command selectVocabulary(const std::string &msg);
 
     void deleteVocabulary();
+
+    void displayLookUpWord(
+            std::string &word,
+            std::pair<int, bool> &row,
+            std::span<std::string> definitions,
+            std::span<std::string> sentences);
+
+    bool switchFlag(DatabaseTools &voc, const std::string &word, bool flag);
 
 public:
     Interface();

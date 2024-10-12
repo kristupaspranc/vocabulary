@@ -33,7 +33,7 @@ public:
     DatabaseTools& operator= (const DatabaseTools&& db){return *this;}
     ~DatabaseTools() = default;
 
-    bool addWord(const std::string & word);
+    void addWord(const std::string & word);
     std::optional<wordsTableRow> lookUpWord(const std::string &word);
 
     void addDefinition(const std::string &word, const std::string &definition);
@@ -45,6 +45,8 @@ public:
     std::optional<std::string> getRandomFlaggedWord();
 
     bool singleFlaggedWordExistance();
+
+    bool checkWordExistance(const std::string &word);
 
     void unflagWord(const std::string &word);
 

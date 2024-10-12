@@ -83,6 +83,7 @@ void Interface::startingScreen(){
     keypad(stdscr, TRUE);
     noecho();
     set_escdelay(25);
+    curs_set(0);
 }
 
 void Interface::getScreenSize(){
@@ -132,6 +133,7 @@ void Interface::printInCenter(const std::string &text, std::span<std::string con
 }
 
 Command Interface::writeCommand(){
+    curs_set(1);
     int ch;
     std::string cmd = "";
 
@@ -164,6 +166,8 @@ Command Interface::writeCommand(){
 
     werase(m_CMDLine);
     wrefresh(m_CMDLine);
+
+    curs_set(0);
 
     return cmd;
 }
@@ -216,92 +220,149 @@ void Interface::addWord(DatabaseTools &voc){
     Command word = writeCommand();
     if (!word) return;
 
-    if (!voc.addWord(*word)){
+    if (voc.checkWordExistance(*word)){
         printInCenter("The word was already added, thus, now flagged");
         getch();
         return;
     }
-}
 
-void Interface::lookUpWord(DatabaseTools &voc){
-        printInCenter("Enter the word to look up");
-        Command word = writeCommand();
-        if (!word) return;
-        werase(m_displayWin);
-        std::optional<std::pair<int, bool>>
-            row = voc.lookUpWord(*word);
-        if (row){
-            mvwprintw(m_displayWin, 3, 3, "%s %d %d",
-                    word->c_str(),
-                    row->first,
-                    row->second
-                    );
-            wrefresh(m_displayWin);
-        }
-        else 
-            printInCenter("There is no such word");
-
-        getch();
-}
-
-void Interface::displayDefinitions(DatabaseTools &voc){
-    printInCenter("Enter the word to see definitions");
-    Command word = writeCommand();
-    if (!word) return;
-
-    werase(m_displayWin);
-    std::optional<std::vector<std::string>>
-        definitions = voc.lookUpDefinitions(*word);
-
-    if (definitions){
-        printInCenter("Here are the definitions", *definitions);
-    }
-    else 
-        printInCenter("There is no such word");
-
-    wrefresh(m_displayWin);
-    getch();
-}
-
-void Interface::addDefinition(DatabaseTools &voc){
-    printInCenter("Choose phrase to add definition to");
-    Command word = writeCommand();
-    if (!word) return;
-
-    printInCenter("Type in the definition");
+    printInCenter("Type in the definition for " + *word);
     Command definition = writeCommand();
     if (!definition) return;
 
-    voc.addDefinition(*word, *definition);
-}
-
-void Interface::displaySentences(DatabaseTools &voc){
-    printInCenter("Enter the word to see sentences");
-    Command word = writeCommand();
-    if (!word) return;
-
-    std::optional<std::vector<std::string>>
-        definitions = voc.lookUpSentences(*word);
-
-    if (definitions){
-        printInCenter("Here are the sentences", *definitions);
-    }
-    else
-        printInCenter("There is no such word");
-
-    getch();
-}
-
-void Interface::addSentence(DatabaseTools &voc){
-    printInCenter("Choose phrase to add sentence to");
-    Command word = writeCommand();
-    if (!word) return;
-
-    printInCenter("Type in the sentence");
+    printInCenter("Type in the sentence for " + *word);
     Command sentence = writeCommand();
     if (!sentence) return;
 
+    voc.addWord(*word);
+    voc.addDefinition(*word, *definition);
     voc.addSentence(*word, *sentence);
+}
+
+void Interface::lookUpWord(DatabaseTools &voc){
+    printInCenter("Enter the word to look up");
+    Command word = writeCommand();
+    if (!word) return;
+
+    std::optional<std::pair<int, bool>>
+        row = voc.lookUpWord(*word);
+
+    if (!row){
+        printInCenter("There is no such word");
+        getch();
+        return;
+    }
+
+    std::optional<std::vector<std::string>>
+        definitions = voc.lookUpDefinitions(*word);
+
+    std::optional<std::vector<std::string>>
+        sentences = voc.lookUpSentences(*word);
+
+    displayLookUpWord(*word, *row, *definitions, *sentences);
+
+    int ch;
+
+    while ((ch=getch()) != ASCIICodes::ESC){
+        switch (ch){
+            case ASCIICodes::d:
+                {
+                    Command definition = addDefinition(voc, *word);
+                    if (definition) definitions->emplace_back(*definition);
+                }
+                break;
+            case ASCIICodes::s:
+                {
+                    Command sentence = addSentence(voc, *word);
+                    if (sentence) sentences->emplace_back(*sentence);
+                }
+                break;
+            case ASCIICodes::r:
+                row->second = switchFlag(voc, *word, row->second);
+                break;
+            default:
+                break;
+        }
+
+        displayLookUpWord(*word, *row, *definitions, *sentences);
+    } 
+}
+
+void Interface::displayLookUpWord(
+        std::string &word,
+        std::pair<int, bool> &row,
+        std::span<std::string> definitions,
+        std::span<std::string> sentences
+        ){
+    werase(m_displayWin);
+
+    int raiseBy = std::ceil((float)(definitions.size() + sentences.size() + 1 + 4)  / 2);
+
+    const std::string isRepeatFlagged = row.second ? "To be repeated." : "Memorized.";
+
+    mvwprintw(m_displayWin, m_centerRow - raiseBy, 1, "%s", word.c_str());
+    mvwprintw(m_displayWin, m_centerRow - raiseBy + 1, 1, "%s %d. %s",
+            "Times viewed:",
+            row.first,
+            isRepeatFlagged.c_str()
+            );
+
+    mvwprintw(m_displayWin, m_centerRow - raiseBy + 2, 1, "%s", "Definitions:");
+
+    for (std::size_t i = 0; i < definitions.size(); i++)
+        mvwprintw(m_displayWin, m_centerRow - raiseBy + 3 + i, 1, "%d. %s",
+                static_cast<int>(i+1),
+                (definitions)[i].c_str());
+
+    mvwprintw(m_displayWin,
+            m_centerRow - raiseBy + 3 + definitions.size(),
+            1, "%s", "Sentences:");
+
+    for (std::size_t i = 0; i < sentences.size(); i++){
+        mvwprintw(m_displayWin,
+                m_centerRow - raiseBy + 4 + i + definitions.size(),
+                1, "%d. %s",
+                static_cast<int>(i+1),
+                (sentences)[i].c_str());
+    }
+
+    int lowerBy = definitions.size() + sentences.size() + 1 + 4 - raiseBy;
+
+    //do not forget to switch raiseBy when adding or deleting line
+    mvwprintw(m_displayWin, m_centerRow + lowerBy, 1, "%s", "d - add definition to the word");
+    mvwprintw(m_displayWin, m_centerRow + lowerBy + 1, 1, "%s", "s - add sentence to the word");
+    mvwprintw(m_displayWin, m_centerRow + lowerBy + 2, 1, "%s", "r - switch status of memorization");
+
+    wrefresh(m_displayWin);
+}
+
+bool Interface::switchFlag(DatabaseTools &voc, const std::string &word, bool flag){
+    if (flag){
+        voc.unflagWord(word);
+        return false;
+    }
+
+    voc.flagWord(word);
+    return true;
+}
+
+Command Interface::addDefinition(DatabaseTools &voc, const std::string &word){
+    printInCenter("Type in the definition");
+    Command definition = writeCommand();
+    if (!definition) return std::nullopt;
+
+    voc.addDefinition(word, *definition);
+    return std::move(*definition);
+}
+
+Command Interface::addSentence(DatabaseTools &voc, const std::string& word){
+    printInCenter("Type in the sentence");
+    Command sentence = writeCommand();
+    if (!sentence) return std::nullopt;
+
+    voc.addSentence(word, *sentence);
+
+    return std::move(*sentence);
 }
 
 void Interface::openVocabulary(const std::string &vocName){
@@ -391,18 +452,6 @@ void Interface::runVocabulary(const std::string &vocName){
             case ASCIICodes::l:
                 lookUpWord(vocabulary);
                 break;
-            case ASCIICodes::d:
-                displayDefinitions(vocabulary);
-                break;
-            case ASCIICodes::f:
-                addDefinition(vocabulary);
-                break;
-            case ASCIICodes::s:
-                displaySentences(vocabulary);
-                break;
-            case ASCIICodes::j:
-                addSentence(vocabulary);
-                break;
             case ASCIICodes::r:
                 randomWord(vocabulary);
                 break;
@@ -411,6 +460,16 @@ void Interface::runVocabulary(const std::string &vocName){
         }
         defaultVocabularyDisplay();
     }
+}
+
+void Interface::defaultVocabularyDisplay(){
+    const std::array<std::string, 7> text = {{
+        "a - Add word or phrase to the vocabulary",
+        "l - Look up a word",
+        "r - Print random word"
+    }};
+
+    printInCenter(text);
 }
 
 void Interface::randomWordInitialDisplay(const std::string &word){
@@ -487,20 +546,6 @@ void Interface::randomWord(DatabaseTools &vocabulary){
 
         randomWordInitialDisplay(*random_word);
     }
-}
-
-void Interface::defaultVocabularyDisplay(){
-    const std::array<std::string, 7> text = {{
-        "a - Add word or phrase to the vocabulary",
-        "d - Look at definitions of word",
-        "l - Look up a word",
-        "f - Add definition to chosen word",
-        "s - Look at sentences of chosen word",
-        "j - Add sentence to chosen word",
-        "r - Print random word"
-    }};
-
-    printInCenter(text);
 }
 
 Command Interface::initialVocabulary(){

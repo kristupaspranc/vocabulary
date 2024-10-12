@@ -26,17 +26,9 @@ void DatabaseTools::execInsertUpdateStatement(
     checkSQLError();
 }
 
-bool DatabaseTools::addWord(const std::string & word){
+void DatabaseTools::addWord(const std::string & word){
     const std::string cmd = R"(INSERT INTO words (word) VALUES (?);)";
     execInsertUpdateStatement(cmd, word);
-
-    if (m_dbCode == SQLITE_CONSTRAINT){
-        flagWord(word);
-        m_dbCode = SQLITE_OK;
-        return false;
-    }
-
-    return true;
 }
 
 std::optional<wordsTableRow> DatabaseTools::lookUpWord(const std::string &word){
@@ -164,6 +156,26 @@ bool DatabaseTools::singleFlaggedWordExistance(){
     if ((m_dbCode = sqlite3_step(stmt)) == SQLITE_ROW){
         sqlite3_finalize(stmt);
         checkSQLError();
+
+        return true;
+    }
+
+    return false;
+}
+
+bool DatabaseTools::checkWordExistance(const std::string &word){
+    const std::string cmd = R"(SELECT word 
+        FROM words
+        WHERE word = (?)
+        LIMIT 1;)";
+
+    sqlite3_stmt *stmt = bindText(cmd, word);
+
+    if ((m_dbCode = sqlite3_step(stmt)) == SQLITE_ROW){
+        sqlite3_finalize(stmt);
+        checkSQLError();
+
+        flagWord(word);
 
         return true;
     }
