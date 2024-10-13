@@ -217,6 +217,15 @@ void DatabaseTools::deleteSentence(const std::string &sentence){
     execStatement(cmd, sentence);
 }
 
+void DatabaseTools::incrementNumberOfLookups(const std::string &word){
+    const std::string cmd = R"(UPDATE words
+        SET no_lookups = no_lookups + 1
+        WHERE word = (?);
+        )";
+
+    execStatement(cmd, word);
+}
+
 
 
 

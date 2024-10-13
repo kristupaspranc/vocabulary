@@ -55,4 +55,6 @@ public:
     void deleteDefinition(const std::string &definition);
 
     void deleteSentence(const std::string &sentence);
+
+    void incrementNumberOfLookups(const std::string &word);
 };

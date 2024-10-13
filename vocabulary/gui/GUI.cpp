@@ -246,6 +246,8 @@ void Interface::lookUpWord(DatabaseTools &voc){
     Command word = writeCommand();
     if (!word) return;
 
+    voc.incrementNumberOfLookups(*word);
+
     std::optional<std::pair<int, bool>>
         row = voc.lookUpWord(*word);
 
@@ -322,7 +324,6 @@ void Interface::displayLookUpWord(
 
     int raiseBy = std::ceil((float)(definitions.size() + sentences.size()
                 + 1 // isRepeatFlagged
-                + 2 // Definitions and Sentences
                 + 5) // help letters
                 / 2);
 
