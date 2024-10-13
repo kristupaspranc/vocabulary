@@ -17,7 +17,7 @@ void DatabaseTools::openDatabase(std::string dbName){
 }
 
 template<typename... Strings>
-void DatabaseTools::execInsertUpdateStatement(
+void DatabaseTools::execStatement(
         const std::string &cmd, allStringsInVariadic auto const&... insertives){
     sqlite3_stmt *stmt = bindText(cmd, insertives...);
 
@@ -28,7 +28,7 @@ void DatabaseTools::execInsertUpdateStatement(
 
 void DatabaseTools::addWord(const std::string & word){
     const std::string cmd = R"(INSERT INTO words (word) VALUES (?);)";
-    execInsertUpdateStatement(cmd, word);
+    execStatement(cmd, word);
 }
 
 std::optional<wordsTableRow> DatabaseTools::lookUpWord(const std::string &word){
@@ -60,13 +60,13 @@ std::optional<wordsTableRow> DatabaseTools::lookUpWord(const std::string &word){
 void DatabaseTools::addDefinition(const std::string &word, const std::string &definition){
     const std::string cmd = R"(INSERT INTO definitions (word, definition)
         VALUES (?,?);)";
-    execInsertUpdateStatement(cmd, word, definition);
+    execStatement(cmd, word, definition);
 }
 
 void DatabaseTools::addSentence(const std::string &word, const std::string &sentence){
     const std::string cmd = R"(INSERT INTO sentences (word, sentence)
         VALUES (?,?);)";
-    execInsertUpdateStatement(cmd, word, sentence);
+    execStatement(cmd, word, sentence);
 }
 
 std::optional<std::vector<std::string>> DatabaseTools::lookUp(
@@ -189,7 +189,7 @@ void DatabaseTools::unflagWord(const std::string &word){
         WHERE word = (?)
         )";
 
-    execInsertUpdateStatement(cmd, word);
+    execStatement(cmd, word);
 }
 
 void DatabaseTools::flagWord(const std::string &word){
@@ -198,6 +198,26 @@ void DatabaseTools::flagWord(const std::string &word){
         WHERE word = (?)
         )";
 
-    execInsertUpdateStatement(cmd, word);
+    execStatement(cmd, word);
 }
+
+void DatabaseTools::deleteDefinition(const std::string &definition){
+    const std::string cmd = R"(DELETE FROM definitions 
+        WHERE definition = (?)
+        )";
+
+    execStatement(cmd, definition);
+}
+
+void DatabaseTools::deleteSentence(const std::string &sentence){
+    const std::string cmd = R"(DELETE FROM sentences 
+        WHERE sentence = (?)
+        )";
+
+    execStatement(cmd, sentence);
+}
+
+
+
+
 

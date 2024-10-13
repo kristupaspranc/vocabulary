@@ -1,6 +1,8 @@
 #include "GUI.h"
 #include "DatabaseCreation.h"
+#include "DatabaseTools.h"
 
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <filesystem>
@@ -280,6 +282,28 @@ void Interface::lookUpWord(DatabaseTools &voc){
             case ASCIICodes::r:
                 row->second = switchFlag(voc, *word, row->second);
                 break;
+            case ASCIICodes::x:
+                {
+                    Command definition = deleteDefinition(voc, *word);
+                    if (definition)
+                        definitions->erase(
+                                std::find(
+                                    definitions->begin(),
+                                    definitions->end(),
+                                    *definition));
+                }
+                break;
+            case ASCIICodes::z:
+                {
+                    Command sentence = deleteSentence(voc, *word);
+                    if (sentence)
+                        sentences->erase(
+                                std::find(
+                                    sentences->begin(),
+                                    sentences->end(),
+                                    *sentence));
+                }
+                break;
             default:
                 break;
         }
@@ -296,44 +320,128 @@ void Interface::displayLookUpWord(
         ){
     werase(m_displayWin);
 
-    int raiseBy = std::ceil((float)(definitions.size() + sentences.size() + 1 + 4)  / 2);
+    int raiseBy = std::ceil((float)(definitions.size() + sentences.size()
+                + 1 // isRepeatFlagged
+                + 2 // Definitions and Sentences
+                + 5) // help letters
+                / 2);
+
+    if (definitions.size()) ++raiseBy;
+    if (sentences.size()) ++raiseBy;
 
     const std::string isRepeatFlagged = row.second ? "To be repeated." : "Memorized.";
 
-    mvwprintw(m_displayWin, m_centerRow - raiseBy, 1, "%s", word.c_str());
-    mvwprintw(m_displayWin, m_centerRow - raiseBy + 1, 1, "%s %d. %s",
+    mvwprintw(m_displayWin, m_centerRow - raiseBy--, 1, "%s", word.c_str());
+    mvwprintw(m_displayWin, m_centerRow - raiseBy--, 1, "%s %d. %s",
             "Times viewed:",
             row.first,
             isRepeatFlagged.c_str()
             );
 
-    mvwprintw(m_displayWin, m_centerRow - raiseBy + 2, 1, "%s", "Definitions:");
+    if (definitions.size()){
+        mvwprintw(m_displayWin, m_centerRow - raiseBy--, 1, "%s", "Definitions:");
 
-    for (std::size_t i = 0; i < definitions.size(); i++)
-        mvwprintw(m_displayWin, m_centerRow - raiseBy + 3 + i, 1, "%d. %s",
-                static_cast<int>(i+1),
-                (definitions)[i].c_str());
-
-    mvwprintw(m_displayWin,
-            m_centerRow - raiseBy + 3 + definitions.size(),
-            1, "%s", "Sentences:");
-
-    for (std::size_t i = 0; i < sentences.size(); i++){
-        mvwprintw(m_displayWin,
-                m_centerRow - raiseBy + 4 + i + definitions.size(),
-                1, "%d. %s",
-                static_cast<int>(i+1),
-                (sentences)[i].c_str());
+        for (std::size_t i = 0; i < definitions.size(); i++)
+            mvwprintw(m_displayWin, m_centerRow - raiseBy--, 1, "%d. %s",
+                    static_cast<int>(i+1),
+                definitions[i].c_str());
     }
 
-    int lowerBy = definitions.size() + sentences.size() + 1 + 4 - raiseBy;
+    if (sentences.size()){
+        mvwprintw(m_displayWin,
+                m_centerRow - raiseBy--,
+                1, "%s", "Sentences:");
+
+        for (std::size_t i = 0; i < sentences.size(); i++){
+            mvwprintw(m_displayWin,
+                    m_centerRow - raiseBy--,
+                    1, "%d. %s",
+                    static_cast<int>(i+1),
+                    sentences[i].c_str());
+        }
+    }
 
     //do not forget to switch raiseBy when adding or deleting line
-    mvwprintw(m_displayWin, m_centerRow + lowerBy, 1, "%s", "d - add definition to the word");
-    mvwprintw(m_displayWin, m_centerRow + lowerBy + 1, 1, "%s", "s - add sentence to the word");
-    mvwprintw(m_displayWin, m_centerRow + lowerBy + 2, 1, "%s", "r - switch status of memorization");
+    raiseBy--; //for empty line
+    mvwprintw(m_displayWin, m_centerRow - raiseBy--, 1, "%s", "d - add definition to the word");
+    mvwprintw(m_displayWin, m_centerRow - raiseBy--, 1, "%s", "s - add sentence to the word");
+    mvwprintw(m_displayWin, m_centerRow - raiseBy--, 1, "%s", "r - switch status of memorization");
+    mvwprintw(m_displayWin, m_centerRow - raiseBy--, 1, "%s", "x - delete definition");
+    mvwprintw(m_displayWin, m_centerRow - raiseBy--, 1, "%s", "z - delete sentence");
 
     wrefresh(m_displayWin);
+}
+
+Command Interface::deleteDefinition(DatabaseTools &voc, const std::string &word){
+    std::optional<std::vector<std::string>>
+        definitions = voc.lookUpDefinitions(word);
+
+    if (!definitions){
+        printInCenter("Word does not have any definitions");
+        getch();
+        return std::nullopt;
+    }
+
+    int raiseBy = std::ceil((float)(definitions->size() + 1) / 2);
+
+    werase(m_displayWin);
+    mvwprintw(m_displayWin, m_centerRow - raiseBy, 1, "%s", "Choose definition to delete");
+
+    for (std::size_t i = 0; i < definitions->size(); i++)
+        mvwprintw(m_displayWin, m_centerRow - raiseBy + 3 + i, 1, "%d. %s",
+                static_cast<int>(i+1),
+                (*definitions)[i].c_str());
+
+    wrefresh(m_displayWin);
+
+    int ch;
+    while ((ch = getch()) != ASCIICodes::ESC){
+        ch -= 49; //49 is the code of 1, aligning to integer
+        if (ch < definitions->size()){
+            std::string deletedDefinition = (*definitions)[ch];
+            voc.deleteDefinition(deletedDefinition);
+
+            return std::move(deletedDefinition);
+        }
+    }
+
+    return std::nullopt;
+}
+
+Command Interface::deleteSentence(DatabaseTools &voc, const std::string &word){
+    std::optional<std::vector<std::string>>
+        sentences = voc.lookUpSentences(word);
+
+    if (!sentences){
+        printInCenter("Word does not have any sentences");
+        getch();
+        return std::nullopt;
+    }
+
+    int raiseBy = std::ceil((float)(sentences->size() + 1) / 2);
+
+    werase(m_displayWin);
+    mvwprintw(m_displayWin, m_centerRow - raiseBy, 1, "%s", "Choose sentence to delete");
+
+    for (std::size_t i = 0; i < sentences->size(); i++)
+        mvwprintw(m_displayWin, m_centerRow - raiseBy + 3 + i, 1, "%d. %s",
+                static_cast<int>(i+1),
+                (*sentences)[i].c_str());
+
+    wrefresh(m_displayWin);
+
+    int ch;
+    while ((ch = getch()) != ASCIICodes::ESC){
+        ch -= 49; //49 is the code of 1, aligning to integer
+        if (ch < sentences->size()){
+            std::string deletedSentence = (*sentences)[ch];
+            voc.deleteSentence(deletedSentence);
+
+            return std::move(deletedSentence);
+        }
+    }
+
+    return std::nullopt;
 }
 
 bool Interface::switchFlag(DatabaseTools &voc, const std::string &word, bool flag){

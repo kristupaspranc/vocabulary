@@ -32,7 +32,9 @@ class Interface{
         static constexpr int o = 111;
         static constexpr int r = 114;
         static constexpr int s = 115;
+        static constexpr int x = 120;
         static constexpr int y = 121;
+        static constexpr int z = 122;
         static constexpr int BACKSPACE = 263;
     };
 
@@ -96,6 +98,10 @@ private:
             std::span<std::string> sentences);
 
     bool switchFlag(DatabaseTools &voc, const std::string &word, bool flag);
+
+    Command deleteDefinition(DatabaseTools &voc, const std::string &word);
+
+    Command deleteSentence(DatabaseTools &voc, const std::string &word);
 
 public:
     Interface();

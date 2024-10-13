@@ -15,7 +15,7 @@ class DatabaseTools: private DatabaseUtils{
     void openDatabase(std::string dbName);
 
     template<typename... Strings>
-    void execInsertUpdateStatement(
+    void execStatement(
             const std::string &cmd, allStringsInVariadic auto const&... insertives);
 
     template<typename... Strings>
@@ -51,4 +51,8 @@ public:
     void unflagWord(const std::string &word);
 
     void flagWord(const std::string &word);
+
+    void deleteDefinition(const std::string &definition);
+
+    void deleteSentence(const std::string &sentence);
 };
