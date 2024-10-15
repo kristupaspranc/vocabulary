@@ -23,6 +23,7 @@ Interface::~Interface(){
     delwin(m_displayWin);
     delwin(m_CMDLine);
     endwin();
+    curs_set(1);
 }
 
 void Interface::run(){
@@ -247,9 +248,12 @@ void Interface::lookUpWord(DatabaseTools &voc){
     if (!word) return;
 
     voc.incrementNumberOfLookups(*word);
+    lookUpWord(voc, *word);
+}
 
+void Interface::lookUpWord(DatabaseTools &voc, std::string &word){
     std::optional<std::pair<int, bool>>
-        row = voc.lookUpWord(*word);
+        row = voc.lookUpWord(word);
 
     if (!row){
         printInCenter("There is no such word");
@@ -258,12 +262,12 @@ void Interface::lookUpWord(DatabaseTools &voc){
     }
 
     std::optional<std::vector<std::string>>
-        definitions = voc.lookUpDefinitions(*word);
+        definitions = voc.lookUpDefinitions(word);
 
     std::optional<std::vector<std::string>>
-        sentences = voc.lookUpSentences(*word);
+        sentences = voc.lookUpSentences(word);
 
-    displayLookUpWord(*word, *row, *definitions, *sentences);
+    displayLookUpWord(word, *row, *definitions, *sentences);
 
     int ch;
 
@@ -271,22 +275,22 @@ void Interface::lookUpWord(DatabaseTools &voc){
         switch (ch){
             case ASCIICodes::d:
                 {
-                    Command definition = addDefinition(voc, *word);
+                    Command definition = addDefinition(voc, word);
                     if (definition) definitions->emplace_back(*definition);
                 }
                 break;
             case ASCIICodes::s:
                 {
-                    Command sentence = addSentence(voc, *word);
+                    Command sentence = addSentence(voc, word);
                     if (sentence) sentences->emplace_back(*sentence);
                 }
                 break;
             case ASCIICodes::r:
-                row->second = switchFlag(voc, *word, row->second);
+                row->second = switchFlag(voc, word, row->second);
                 break;
             case ASCIICodes::x:
                 {
-                    Command definition = deleteDefinition(voc, *word);
+                    Command definition = deleteDefinition(voc, word);
                     if (definition)
                         definitions->erase(
                                 std::find(
@@ -297,7 +301,7 @@ void Interface::lookUpWord(DatabaseTools &voc){
                 break;
             case ASCIICodes::z:
                 {
-                    Command sentence = deleteSentence(voc, *word);
+                    Command sentence = deleteSentence(voc, word);
                     if (sentence)
                         sentences->erase(
                                 std::find(
@@ -310,8 +314,8 @@ void Interface::lookUpWord(DatabaseTools &voc){
                 break;
         }
 
-        displayLookUpWord(*word, *row, *definitions, *sentences);
-    } 
+        displayLookUpWord(word, *row, *definitions, *sentences);
+    }
 }
 
 void Interface::displayLookUpWord(
@@ -582,12 +586,15 @@ void Interface::defaultVocabularyDisplay(){
 }
 
 void Interface::randomWordInitialDisplay(const std::string &word){
-    const std::array<std::string, 5> text ={{
-        "The random word is " + word,
+    const std::array<std::string, 8> text ={{
+        word,
+        "",
         "a - add sentence to the word",
         "<SPACE> - add sentence to the word and go to next word",
         "d - see definitions of the word",
-        "m - flag the word as memorized, go to next word"
+        "s - see sentences of the word",
+        "m - flag the word as memorized, go to next word",
+        "l - look up word"
     }};
 
     printInCenter(text);
@@ -609,42 +616,51 @@ void Interface::randomWord(DatabaseTools &vocabulary){
     while((ch = getch()) != ASCIICodes::ESC){
         switch (ch){
         case ASCIICodes::a:
-            {
-                printInCenter("Add a sentence with context for word " + *random_word);
-                Command sentence = writeCommand();
-                if (!sentence) break;
-
-                vocabulary.addSentence(*random_word, *sentence);
-                break;
-            }
+            (void)addSentence(vocabulary, *random_word);
+            break;
         case ASCIICodes::SPACE:
-            {
-                printInCenter("Add a sentence with context for word " + *random_word);
-                Command sentence = writeCommand();
-                if (!sentence) break;
-
-                vocabulary.addSentence(*random_word, *sentence);
-                random_word = vocabulary.getRandomFlaggedWord();
-                break;
-            }
+            (void)addSentence(vocabulary, *random_word);
+            random_word = vocabulary.getRandomFlaggedWord();
+            vocabulary.incrementNumberOfLookups(*random_word);
+            break;
         case ASCIICodes::d:
             {
                 std::optional<std::vector<std::string>>
                     definitions = vocabulary.lookUpDefinitions(*random_word);
 
-                printInCenter("The definition(s) of word " + *random_word,
-                    *definitions);
+                if (definitions)
+                    printInCenter("The definition(s) of word " + *random_word,
+                        *definitions);
+                else printInCenter("No definitions for word " + *random_word);
+
                 getch();
-                break;
             }
+            break;
         case ASCIICodes::m:
+            vocabulary.unflagWord(*random_word);
+            printInCenter("The word '" + *random_word + "' was unflagged");
+            getch();
+            random_word = vocabulary.getRandomFlaggedWord();
+            vocabulary.incrementNumberOfLookups(*random_word);
+            break;
+        case ASCIICodes::l:
+            lookUpWord(vocabulary, *random_word);
+            break;
+        case ASCIICodes::s:
             {
-                vocabulary.unflagWord(*random_word);
-                printInCenter("The word '" + *random_word + "' was unflagged");
+                std::optional<std::vector<std::string>>
+                    sentences = vocabulary.lookUpSentences(*random_word);
+
+                if (sentences)
+                    printInCenter("The sentence(s) of word " + *random_word,
+                        *sentences);
+
+                else printInCenter("No sentences for word " + *random_word);
                 getch();
-                random_word = vocabulary.getRandomFlaggedWord();
-                break;
             }
+            break;
+        default:
+            break;
         }
 
         if (!random_word){

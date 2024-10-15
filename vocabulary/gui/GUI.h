@@ -81,6 +81,8 @@ private:
 
     void lookUpWord(DatabaseTools &voc);
 
+    void lookUpWord(DatabaseTools &voc, std::string &word);
+
     Command addDefinition(DatabaseTools &voc, const std::string &word);
 
     Command addSentence(DatabaseTools &voc, const std::string& word);
