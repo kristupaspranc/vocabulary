@@ -31,4 +31,6 @@ public:
     static void s_deleteDatabase(std::string database);
 
     static bool s_checkDatabaseExistence(std::string dbName);
+
+    static void s_renameDatabase(std::string oldName, std::string newName);
 };

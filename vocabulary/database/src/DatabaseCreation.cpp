@@ -106,3 +106,18 @@ bool DatabaseCreation::s_checkDatabaseExistence(std::string dbName){
     dbName = "Databases/" + dbName + ".db";
     return std::filesystem::exists(dbName);
 }
+
+void DatabaseCreation::s_renameDatabase(std::string oldName, std::string newName){
+    oldName += ".db";
+    newName += ".db";
+
+    try {
+        std::filesystem::rename(
+                std::filesystem::current_path() / "Databases" / oldName,
+                std::filesystem::current_path() / "Databases" / newName
+                );
+    }
+    catch (const std::filesystem::filesystem_error& e) {
+        s_log << "Filesystem error: " << e.what() << "\n";
+    }
+}

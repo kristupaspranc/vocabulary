@@ -93,6 +93,8 @@ private:
 
     void deleteVocabulary();
 
+    void renameVocabulary();
+
     void displayLookUpWord(
             std::string &word,
             std::pair<int, bool> &row,

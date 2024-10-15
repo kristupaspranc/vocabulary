@@ -51,6 +51,8 @@ void Interface::run(){
             case ASCIICodes::d:
                 deleteVocabulary();
                 break;
+            case ASCIICodes::r:
+                renameVocabulary();
             default:
                 break;
         }
@@ -71,10 +73,11 @@ void Interface::initializeDisplay(){
 }
 
 void Interface::initialDisplay(){
-    const std::array<std::string, 3> text = {{
+    const std::array<std::string, 4> text = {{
         "o - Open vocabulary",
         "c - Create new vocabulary",
-        "d - Delete existing vocabulary"
+        "d - Delete existing vocabulary",
+        "r - Rename existing vocabulary"
     }};
 
     printInCenter(text);
@@ -173,6 +176,22 @@ Command Interface::writeCommand(){
     curs_set(0);
 
     return cmd;
+}
+
+void Interface::renameVocabulary(){
+    Command oldVocName = selectVocabulary("Select a vocabulary to delete");
+
+    if (!oldVocName) return;
+
+    printInCenter("Type the new name of vocabulary " + *oldVocName);
+    Command newVocName = writeCommand();
+
+    if (!newVocName) return;
+
+    DatabaseCreation::s_renameDatabase(*oldVocName, *newVocName);
+
+    printInCenter("Vocabulary " + *oldVocName + "was renamed to " + *newVocName);
+    getch();
 }
 
 void Interface::deleteVocabulary(){
