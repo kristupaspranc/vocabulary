@@ -32,18 +32,7 @@ void Interface::run(){
     while ((ch =  getch()) != ASCIICodes::ESC){
         switch(ch) {
             case ASCIICodes::c:
-                {
-                    if (DatabaseCreation::s_getNumberOfDatabases() >= 7){
-                        printInCenter("Seven databases are supported, delete to add");
-                        getch();
-                        break;
-                    }
-
-                    Command vocName = createVocabulary();
-
-                    if (vocName)
-                        openVocabulary(*vocName);
-                }
+                createVocabularyInterface();
                 break;
             case ASCIICodes::o:
                 openVocabulary();
@@ -53,6 +42,7 @@ void Interface::run(){
                 break;
             case ASCIICodes::r:
                 renameVocabulary();
+                break;
             default:
                 break;
         }
@@ -235,6 +225,19 @@ std::optional<std::string> Interface::createVocabulary(){
     getch();
 
     return std::move(*vocName);
+}
+
+void Interface::createVocabularyInterface(){
+    if (DatabaseCreation::s_getNumberOfDatabases() >= 7){
+        printInCenter("Seven databases are supported, delete to add");
+        getch();
+        return;
+    }
+
+    Command vocName = createVocabulary();
+
+    if (vocName)
+        openVocabulary(*vocName);
 }
 
 void Interface::addWord(DatabaseTools &voc){

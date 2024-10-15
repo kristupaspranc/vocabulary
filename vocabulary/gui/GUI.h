@@ -49,7 +49,9 @@ private:
 
     Command writeCommand();
 
-    std::optional<std::string> createVocabulary();
+    Command createVocabulary();
+
+    void createVocabularyInterface();
 
     void openVocabulary();
 
