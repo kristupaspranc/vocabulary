@@ -17,6 +17,7 @@ Interface::Interface(){
     refresh();
     initializeDisplay();
     initializeCMDLine();
+    m_functions.emplace([this]{return initialMenu();});
 }
 
 Interface::~Interface(){
@@ -27,6 +28,34 @@ Interface::~Interface(){
 }
 
 void Interface::run(){
+    while (!m_functions.empty())
+        m_functions.top()();
+}
+
+void Interface::initializeCMDLine(){
+    //setting first two to 0's defaults to filling the window till the end
+    m_CMDLine = newwin(0, 0, LINES - 2, 0);
+    wrefresh(m_CMDLine);
+}
+
+void Interface::initializeDisplay(){
+    m_displayWin = newwin(LINES - 2, 0, 0, 0);
+    m_centerRow = std::floor(static_cast<float>(getmaxy(m_displayWin))/2);
+}
+
+void Interface::initialDisplay(){
+    const std::array<std::string, 4> text = {{
+        "o - Open vocabulary",
+        "c - Create new vocabulary",
+        "d - Delete existing vocabulary",
+        "r - Rename existing vocabulary"
+    }};
+
+    printInCenter(text);
+}
+
+void Interface::initialMenu(){
+    initialDisplay();
     int ch;
 
     while ((ch =  getch()) != ASCIICodes::ESC){
@@ -48,29 +77,7 @@ void Interface::run(){
         }
         initialDisplay();
     }
-}
-
-void Interface::initializeCMDLine(){
-    //setting first two to 0's defaults to filling the window till the end
-    m_CMDLine = newwin(0, 0, LINES - 2, 0);
-    wrefresh(m_CMDLine);
-}
-
-void Interface::initializeDisplay(){
-    m_displayWin = newwin(LINES - 2, 0, 0, 0);
-    m_centerRow = std::floor(static_cast<float>(getmaxy(m_displayWin))/2);
-    initialDisplay();
-}
-
-void Interface::initialDisplay(){
-    const std::array<std::string, 4> text = {{
-        "o - Open vocabulary",
-        "c - Create new vocabulary",
-        "d - Delete existing vocabulary",
-        "r - Rename existing vocabulary"
-    }};
-
-    printInCenter(text);
+    m_functions.pop();
 }
 
 void Interface::startingScreen(){

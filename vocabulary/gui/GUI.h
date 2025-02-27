@@ -1,13 +1,13 @@
+#include<functional>
 #include <map>
+#include <span>
+#include <stack>
 #include <string>
 #include <utility>
-#include <span>
 
 #include <ncurses.h>
 
-#include "DatabaseCreation.h"
 #include "DatabaseTools.h"
-#include "DatabaseUtils.h"
 
 using Command = std::optional<std::string>;
 
@@ -16,6 +16,7 @@ class Interface{
     WINDOW *m_displayWin;
     std::pair<int, int> m_screenSize;
     int m_centerRow;
+    std::stack<std::function<void()>> m_functions;
 
 
     struct ASCIICodes{
@@ -62,6 +63,8 @@ private:
     void defaultVocabularyDisplay();
 
     Command initialVocabulary();
+
+    void initialMenu();
 
     void randomWord(DatabaseTools &vocabulary);
 
