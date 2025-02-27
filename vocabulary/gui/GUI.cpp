@@ -1,6 +1,7 @@
 #include "GUI.h"
 #include "DatabaseCreation.h"
 #include "DatabaseTools.h"
+#include <signal.h>
 
 #include <algorithm>
 #include <array>
@@ -43,6 +44,12 @@ void Interface::initializeDisplay(){
     m_centerRow = std::floor(static_cast<float>(getmaxy(m_displayWin))/2);
 }
 
+void Interface::winchHandler(int sig){
+    endwin();
+    refresh();
+    initscr();
+}
+
 void Interface::initialDisplay(){
     const std::array<std::string, 4> text = {{
         "o - Open vocabulary",
@@ -81,6 +88,7 @@ void Interface::initialMenu(){
 }
 
 void Interface::startingScreen(){
+    signal(SIGWINCH, winchHandler);
     initscr();
     cbreak();
     keypad(stdscr, TRUE);

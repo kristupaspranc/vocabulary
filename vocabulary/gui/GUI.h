@@ -44,6 +44,8 @@ private:
 
     void initializeDisplay();
 
+    static void winchHandler(int sig);
+
     void startingScreen();
 
     void getScreenSize();
