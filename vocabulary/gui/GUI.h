@@ -17,7 +17,7 @@ class Interface{
     std::pair<int, int> m_screenSize;
     int m_centerRow;
     std::stack<std::function<void()>> m_functions;
-
+    std::optional<DatabaseTools> m_vocabulary;
 
     struct ASCIICodes{
         static constexpr int ENTER = 10;
@@ -60,7 +60,7 @@ private:
 
     void openVocabulary(const std::string &vocName);
 
-    inline void runVocabulary(const std::string &vocName);
+    inline void runVocabulary(const std::string vocName);
 
     void defaultVocabularyDisplay();
 
@@ -68,7 +68,7 @@ private:
 
     void initialMenu();
 
-    void randomWord(DatabaseTools &vocabulary);
+    void randomWord();
 
     void randomWordInitialDisplay(const std::string &word);
 
@@ -84,9 +84,9 @@ private:
             std::span<std::string const> firstSpan,
             std::span<std::string const> secondSpan);
 
-    void addWord(DatabaseTools &voc);
+    void addWord();
 
-    void lookUpWord(DatabaseTools &voc);
+    void lookUpWord();
 
     void lookUpWord(DatabaseTools &voc, std::string &word);
 

@@ -12,7 +12,9 @@
 
 #include <ncurses.h>
 
-Interface::Interface(){
+Interface::Interface():
+    m_vocabulary{std::nullopt}
+{
     startingScreen();
     getScreenSize();
     refresh();
@@ -68,17 +70,17 @@ void Interface::initialMenu(){
     while ((ch =  getch()) != ASCIICodes::ESC){
         switch(ch) {
             case ASCIICodes::c:
-                createVocabularyInterface();
-                break;
+                m_functions.emplace([this]{createVocabularyInterface();});
+                return;
             case ASCIICodes::o:
-                openVocabulary();
-                break;
+                m_functions.emplace([this]{openVocabulary();});
+                return;
             case ASCIICodes::d:
-                deleteVocabulary();
-                break;
+                m_functions.emplace([this]{deleteVocabulary();});
+                return;
             case ASCIICodes::r:
-                renameVocabulary();
-                break;
+                m_functions.emplace([this]{renameVocabulary();});
+                return;
             default:
                 break;
         }
@@ -251,16 +253,18 @@ void Interface::createVocabularyInterface(){
 
     Command vocName = createVocabulary();
 
+    m_functions.pop();
+
     if (vocName)
         openVocabulary(*vocName);
 }
 
-void Interface::addWord(DatabaseTools &voc){
+void Interface::addWord(){
     printInCenter("Enter the word to add");
     Command word = writeCommand();
     if (!word) return;
 
-    if (voc.checkWordExistance(*word)){
+    if (m_vocabulary->checkWordExistance(*word)){
         printInCenter("The word was already added, thus, now flagged");
         getch();
         return;
@@ -274,18 +278,18 @@ void Interface::addWord(DatabaseTools &voc){
     Command sentence = writeCommand();
     if (!sentence) return;
 
-    voc.addWord(*word);
-    voc.addDefinition(*word, *definition);
-    voc.addSentence(*word, *sentence);
+    m_vocabulary->addWord(*word);
+    m_vocabulary->addDefinition(*word, *definition);
+    m_vocabulary->addSentence(*word, *sentence);
 }
 
-void Interface::lookUpWord(DatabaseTools &voc){
+void Interface::lookUpWord(){
     printInCenter("Enter the word to look up");
     Command word = writeCommand();
     if (!word) return;
 
-    voc.incrementNumberOfLookups(*word);
-    lookUpWord(voc, *word);
+    m_vocabulary->incrementNumberOfLookups(*word);
+    lookUpWord(*m_vocabulary, *word);
 }
 
 void Interface::lookUpWord(DatabaseTools &voc, std::string &word){
@@ -516,14 +520,18 @@ Command Interface::addSentence(DatabaseTools &voc, const std::string& word){
 }
 
 void Interface::openVocabulary(const std::string &vocName){
-    runVocabulary(vocName);
+    m_functions.pop();
+
+    m_functions.emplace([this,vocName]{runVocabulary(vocName);});
 }
 
 void Interface::openVocabulary(){
     Command vocName = selectVocabulary("Select a vocabulary to enter");
 
+    m_functions.pop();
+
     if (vocName)
-        runVocabulary(*vocName);
+        m_functions.emplace([this,vocName]{runVocabulary(*vocName);});
 }
 
 Command Interface::selectVocabulary(const std::string &msg){
@@ -589,27 +597,31 @@ void Interface::getMappedNames(std::map<char, std::string> &map){
     }
 }
 
-void Interface::runVocabulary(const std::string &vocName){
-    DatabaseTools vocabulary{vocName};
+void Interface::runVocabulary(const std::string vocName){
+    if (!m_vocabulary)
+        m_vocabulary = DatabaseTools{vocName};
+
     defaultVocabularyDisplay();
     int ch;
 
     while ((ch = getch()) != ASCIICodes::ESC){
         switch(ch) {
             case ASCIICodes::a:
-                addWord(vocabulary);
+                addWord();
                 break;
             case ASCIICodes::l:
-                lookUpWord(vocabulary);
+                lookUpWord();
                 break;
             case ASCIICodes::r:
-                randomWord(vocabulary);
-                break;
+                m_functions.emplace([this]{randomWord();});
+                return;
             default:
                 break;
         }
         defaultVocabularyDisplay();
     }
+    m_vocabulary = std::nullopt;
+    m_functions.pop();
 }
 
 void Interface::defaultVocabularyDisplay(){
@@ -637,8 +649,9 @@ void Interface::randomWordInitialDisplay(const std::string &word){
     printInCenter(text);
 }
 
-void Interface::randomWord(DatabaseTools &vocabulary){
-    std::optional<std::string> random_word = vocabulary.getRandomFlaggedWord();
+void Interface::randomWord(){
+    m_functions.pop();
+    std::optional<std::string> random_word = m_vocabulary->getRandomFlaggedWord();
 
     if (!random_word){
         printInCenter("There are no words to memorize in the vocabulary");
@@ -653,17 +666,17 @@ void Interface::randomWord(DatabaseTools &vocabulary){
     while((ch = getch()) != ASCIICodes::ESC){
         switch (ch){
         case ASCIICodes::a:
-            (void)addSentence(vocabulary, *random_word);
+            (void)addSentence(*m_vocabulary, *random_word);
             break;
         case ASCIICodes::SPACE:
-            (void)addSentence(vocabulary, *random_word);
-            random_word = vocabulary.getRandomFlaggedWord();
-            vocabulary.incrementNumberOfLookups(*random_word);
+            (void)addSentence(*m_vocabulary, *random_word);
+            random_word = m_vocabulary->getRandomFlaggedWord();
+            m_vocabulary->incrementNumberOfLookups(*random_word);
             break;
         case ASCIICodes::d:
             {
                 std::optional<std::vector<std::string>>
-                    definitions = vocabulary.lookUpDefinitions(*random_word);
+                    definitions = m_vocabulary->lookUpDefinitions(*random_word);
 
                 if (definitions)
                     printInCenter("The definition(s) of word " + *random_word,
@@ -674,19 +687,19 @@ void Interface::randomWord(DatabaseTools &vocabulary){
             }
             break;
         case ASCIICodes::m:
-            vocabulary.unflagWord(*random_word);
+            m_vocabulary->unflagWord(*random_word);
             printInCenter("The word '" + *random_word + "' was unflagged");
             getch();
-            random_word = vocabulary.getRandomFlaggedWord();
-            vocabulary.incrementNumberOfLookups(*random_word);
+            random_word = m_vocabulary->getRandomFlaggedWord();
+            m_vocabulary->incrementNumberOfLookups(*random_word);
             break;
         case ASCIICodes::l:
-            lookUpWord(vocabulary, *random_word);
+            lookUpWord(*m_vocabulary, *random_word);
             break;
         case ASCIICodes::s:
             {
                 std::optional<std::vector<std::string>>
-                    sentences = vocabulary.lookUpSentences(*random_word);
+                    sentences = m_vocabulary->lookUpSentences(*random_word);
 
                 if (sentences)
                     printInCenter("The sentence(s) of word " + *random_word,
@@ -701,7 +714,7 @@ void Interface::randomWord(DatabaseTools &vocabulary){
         }
 
         if (!random_word){
-            printInCenter("There are no words to memorize in the vocabulary");
+            printInCenter("There are no words to memorize in the m_vocabulary");
             getch();
             return;
         }

@@ -26,6 +26,7 @@ class DatabaseTools: private DatabaseUtils{
             const std::string &cmd, const std::string &word);
 
 public:
+    DatabaseTools() = default;
     DatabaseTools(const std::string & dbName);
     DatabaseTools(const DatabaseTools& db) = delete;
     DatabaseTools& operator= (const DatabaseTools& db) = delete;
