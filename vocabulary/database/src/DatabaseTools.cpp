@@ -2,6 +2,7 @@
 #include "DatabaseUtils.h"
 
 #include <optional>
+#include <sqlite3.h>
 #include <utility>
 
 
@@ -22,7 +23,11 @@ void DatabaseTools::execStatement(
     sqlite3_stmt *stmt = bindText(cmd, insertives...);
 
     m_dbCode = sqlite3_step(stmt);
-    sqlite3_finalize(stmt);
+
+    if (m_dbCode != SQLITE_DONE)
+        checkSQLError();
+
+    m_dbCode = sqlite3_finalize(stmt);
     checkSQLError();
 }
 
@@ -45,13 +50,13 @@ std::optional<wordsTableRow> DatabaseTools::lookUpWord(const std::string &word){
                 sqlite3_column_int(stmt, 0),
                 sqlite3_column_int(stmt, 1)
                 );
-        sqlite3_finalize(stmt);
+        m_dbCode = sqlite3_finalize(stmt);
         checkSQLError();
 
         return std::move(queryResults);
     }
 
-    sqlite3_finalize(stmt);
+    m_dbCode = sqlite3_finalize(stmt);
     checkSQLError();
 
     return std::nullopt;
@@ -82,7 +87,7 @@ std::optional<std::vector<std::string>> DatabaseTools::lookUp(
                 );
     }
 
-    sqlite3_finalize(stmt);
+    m_dbCode = sqlite3_finalize(stmt);
     checkSQLError();
 
     if (queryResults.empty())
@@ -136,13 +141,13 @@ std::optional<std::string> DatabaseTools::getRandomFlaggedWord(){
     if ((m_dbCode = sqlite3_step(stmt)) == SQLITE_ROW){
         const std::string random_word = 
                 reinterpret_cast<const char*>(sqlite3_column_text(stmt,0));
-        sqlite3_finalize(stmt);
+        m_dbCode = sqlite3_finalize(stmt);
         checkSQLError();
 
         return random_word;
     }
 
-    sqlite3_finalize(stmt);
+    m_dbCode = sqlite3_finalize(stmt);
     checkSQLError();
 
     return std::nullopt;
@@ -157,7 +162,7 @@ bool DatabaseTools::singleFlaggedWordExistance(){
     sqlite3_prepare_v2(m_dbHandle, cmd.c_str(), -1, &stmt, NULL);
 
     if ((m_dbCode = sqlite3_step(stmt)) == SQLITE_ROW){
-        sqlite3_finalize(stmt);
+        m_dbCode = sqlite3_finalize(stmt);
         checkSQLError();
 
         return true;
@@ -175,7 +180,7 @@ bool DatabaseTools::checkWordExistance(const std::string &word){
     sqlite3_stmt *stmt = bindText(cmd, word);
 
     if ((m_dbCode = sqlite3_step(stmt)) == SQLITE_ROW){
-        sqlite3_finalize(stmt);
+        m_dbCode = sqlite3_finalize(stmt);
         checkSQLError();
 
         flagWord(word);
