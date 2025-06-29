@@ -111,10 +111,13 @@ template<typename... Strings>
 sqlite3_stmt* DatabaseTools::bindText(
         const std::string &cmd, allStringsInVariadic auto const&... insertives){
     sqlite3_stmt *stmt;
-    sqlite3_prepare_v2(m_dbHandle, cmd.c_str(), -1, &stmt, NULL);
+
+    m_dbCode = sqlite3_prepare_v2(m_dbHandle, cmd.c_str(), -1, &stmt, NULL);
+    checkSQLError();
+
     int i = 1;
-    m_dbCode = (sqlite3_bind_text(
-            stmt, i++, insertives.c_str(), -1, SQLITE_STATIC), ...);
+    ((m_dbCode == SQLITE_OK ? m_dbCode = sqlite3_bind_text(stmt, i++, insertives.c_str(), -1, 
+                                                             SQLITE_STATIC) : m_dbCode), ...);
     checkSQLError();
 
     return stmt;
