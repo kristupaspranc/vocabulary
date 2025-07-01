@@ -599,7 +599,7 @@ void Interface::getMappedNames(std::map<char, std::string> &map){
 
 void Interface::runVocabulary(const std::string vocName){
     if (!m_vocabulary)
-        m_vocabulary.emplace(vocName);
+        m_vocabulary.emplace(DatabaseTools{vocName});
 
     defaultVocabularyDisplay();
     int ch;

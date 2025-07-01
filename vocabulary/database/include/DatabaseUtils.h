@@ -25,12 +25,10 @@ protected:
 
 public:
     DatabaseUtils();
-    // Copy and move constructors can only be enabled if the databases are closed
-    // and opened manually in each as SQLite3 has inner dependencies to the
-    // outside pointer and putting it to new owner ship does not work
     DatabaseUtils(const DatabaseUtils& db) = delete;
     DatabaseUtils& operator= (const DatabaseUtils& db) = delete;
-    DatabaseUtils(DatabaseUtils&& db) = delete;
-    DatabaseUtils& operator= (DatabaseUtils&& db) = delete;
+    DatabaseUtils(DatabaseUtils&& db);
+    DatabaseUtils& operator= (DatabaseUtils&& db);
     ~DatabaseUtils();
 };
+

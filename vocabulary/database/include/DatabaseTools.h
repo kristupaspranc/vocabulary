@@ -30,9 +30,18 @@ public:
     DatabaseTools(const std::string & dbName);
     DatabaseTools(const DatabaseTools& db) = delete;
     DatabaseTools& operator= (const DatabaseTools& db) = delete;
-    DatabaseTools(const DatabaseTools&& db){}
-    DatabaseTools& operator= (const DatabaseTools&& db){return *this;}
+
+    DatabaseTools(DatabaseTools&& db):
+        DatabaseUtils(std::move(db)){}
+
+    DatabaseTools& operator= (DatabaseTools&& db){
+        if (this != &db)
+            DatabaseUtils::operator=(std::move(db));
+        return *this;
+    }
+
     ~DatabaseTools() = default;
+
 
     void addWord(const std::string & word);
     std::optional<wordsTableRow> lookUpWord(const std::string &word);

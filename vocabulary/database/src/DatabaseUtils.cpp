@@ -53,40 +53,50 @@ DatabaseUtils::~DatabaseUtils(){
         m_dbHandle = nullptr;
     }
 
+    if (m_errMsg)
+        sqlite3_free(m_errMsg);
+
     releaseReference();
 }
 
-//DatabaseUtils::DatabaseUtils(DatabaseUtils&& db):
-    //m_dbHandle(db.m_dbHandle), m_errMsg(db.m_errMsg), m_dbCode(db.m_dbCode)
-//{
-    //db.m_dbHandle = nullptr;
-    //db.m_errMsg = nullptr;
-    //db.m_dbCode = SQLITE_OK;
-    //acquireReference();
-//}
+DatabaseUtils::DatabaseUtils(DatabaseUtils&& db):
+    m_dbHandle(db.m_dbHandle), m_errMsg(db.m_errMsg), m_dbCode(db.m_dbCode)
+{
+    db.m_dbHandle = nullptr;
+    db.m_errMsg = nullptr;
+    db.m_dbCode = SQLITE_OK;
+    acquireReference();
+}
 
-//DatabaseUtils& DatabaseUtils::operator= (DatabaseUtils&& db){
-    //if (this != &db) {
-        //if (m_dbHandle) {
-            //sqlite3_close(m_dbHandle);
-        //}
-        //if (m_errMsg) {
-            //sqlite3_free(m_errMsg);
-        //}
+DatabaseUtils& DatabaseUtils::operator= (DatabaseUtils&& db){
+    if (this != &db) {
+        if (m_dbHandle){
+            if (m_dbCode != SQLITE_OK){
+                s_log << "DB Error: " << sqlite3_errmsg(m_dbHandle) << "\n";
+                s_log.flush();
+            }
 
-        //m_dbHandle = db.m_dbHandle;
-        //m_errMsg = db.m_errMsg;
-        //m_dbCode = db.m_dbCode;
+            sqlite3_close(m_dbHandle);
+            m_dbHandle = nullptr;
+        }
 
-        //db.m_dbHandle = nullptr;
-        //db.m_errMsg = nullptr;
-        //db.m_dbCode = SQLITE_OK;
+        if (m_errMsg) {
+            sqlite3_free(m_errMsg);
+        }
 
-        //acquireReference();
-    //}
+        m_dbHandle = db.m_dbHandle;
+        m_errMsg = db.m_errMsg;
+        m_dbCode = db.m_dbCode;
 
-    //return *this;
-//}
+        db.m_dbHandle = nullptr;
+        db.m_errMsg = nullptr;
+        db.m_dbCode = SQLITE_OK;
+
+        acquireReference();
+    }
+
+    return *this;
+}
 
 //void DatabaseUtils::printDatabaseFileName() {
     //sqlite3_stmt* stmt;
