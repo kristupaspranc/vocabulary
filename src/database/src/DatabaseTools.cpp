@@ -136,7 +136,8 @@ std::optional<std::string> DatabaseTools::getRandomFlaggedWord(){
         LIMIT 1;)";
 
     sqlite3_stmt *stmt;
-    sqlite3_prepare_v2(m_dbHandle, cmd.c_str(), -1, &stmt, NULL);
+    m_dbCode = sqlite3_prepare_v2(m_dbHandle, cmd.c_str(), -1, &stmt, NULL);
+    checkSQLError();
 
     if ((m_dbCode = sqlite3_step(stmt)) == SQLITE_ROW){
         const std::string random_word = 
@@ -159,7 +160,8 @@ bool DatabaseTools::singleFlaggedWordExistance(){
         LIMIT 1;)";
 
     sqlite3_stmt *stmt;
-    sqlite3_prepare_v2(m_dbHandle, cmd.c_str(), -1, &stmt, NULL);
+    m_dbCode = sqlite3_prepare_v2(m_dbHandle, cmd.c_str(), -1, &stmt, NULL);
+    checkSQLError();
 
     if ((m_dbCode = sqlite3_step(stmt)) == SQLITE_ROW){
         m_dbCode = sqlite3_finalize(stmt);

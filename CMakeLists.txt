@@ -8,12 +8,15 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 add_library(vocabulary_compiler_flags INTERFACE)
 target_compile_features(vocabulary_compiler_flags INTERFACE cxx_std_20)
 
-add_subdirectory(vocabulary)
+add_subdirectory(src)
 
-add_executable(vcb main.cpp)
+add_executable(vcb src/main.cpp)
 
 target_link_libraries(vcb PUBLIC
     gui
     vocabulary_compiler_flags
 )
 
+install(TARGETS vcb
+    RUNTIME DESTINATION bin
+)
